@@ -121,10 +121,8 @@ struct aqualinkdata
   char boost_msg[10];
   //bool last_msg_was_status;
   //bool ar_swg_connected;
-  #ifdef AQ_DEBUG
   struct timespec last_active_time;
   struct timespec start_active_time;
-  #endif
 };
 
 
