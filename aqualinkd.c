@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-/*
+
 void debugPacketPrint(unsigned char ID, unsigned char *packet_buffer, int packet_length)
 {
   char buff[1000];
@@ -833,9 +833,9 @@ void debugPacketPrint(unsigned char ID, unsigned char *packet_buffer, int packet
     cnt += sprintf(buff + cnt, "\n");
 
   //logMessage(LOG_NOTICE, "- AQUA SWG - \n%s", buff);
-  if (_config_parameters.debug_RSProtocol_packets)
-    writePacketLog(buff);
-  else
+  //if (_config_parameters.debug_RSProtocol_packets)
+  //  writePacketLog(buff);
+  //else
     logMessage(LOG_NOTICE, "%s", buff);
 }
 
@@ -855,6 +855,7 @@ void debugPacket(unsigned char *packet_buffer, int packet_length)
   lastID = packet_buffer[PKT_DEST];
 }
 
+/*
 void logPacket(unsigned char *packet_buffer, int packet_length)
 {
   static unsigned char last_packet_buffer[AQ_MAXPKTLEN];
@@ -920,6 +921,56 @@ void logPacket(unsigned char *packet_buffer, int packet_length)
 #define MAX_BLOCK_ACK 12
 #define MAX_BUSY_ACK  (50 + MAX_BLOCK_ACK)
 
+// :TODO: enable last active
+#if 0
+      bool bPDA_in_standby = false;
+      if (_aqualink_data.active_thread.thread_id == 0)
+        {
+          time_t now;
+          time (&now);
+          if (difftime (now, _aqualink_data.last_active_time) > 65)
+            {
+              aq_programmer (AQ_PDA_DEVICE_STATUS, NULL,
+                             &_aqualink_data);
+            }
+          else if (difftime (now, _aqualink_data.last_active_time) > 5)
+            {
+              bPDA_in_standby = true;
+              pda_m_clear ();
+            }
+        }
+      // Can only send command to status message on PDA.
+      if (_config_parameters.pda_mode == true
+          && packet_buffer[PKT_CMD] == CMD_STATUS)
+        {
+          if ((_aqualink_data.active_thread.thread_id == 0)
+              && bPDA_in_standby)
+            {
+              logMessage (LOG_DEBUG, "NO STATUS ACK\n");
+            }
+          else
+            {
+              send_ack (rs_fd, pop_aq_cmd (&_aqualink_data));
+            }
+        }
+      else if (_config_parameters.pda_mode == true
+          && packet_buffer[PKT_CMD] == CMD_PROBE)
+        {
+          if ((_aqualink_data.active_thread.thread_id == 0)
+              && bPDA_in_standby)
+            {
+              logMessage (LOG_DEBUG, "NO PROBE ACK\n");
+            }
+          else
+            {
+              send_ack (rs_fd, NUL);
+            }
+        }
+      else
+        {
+          send_ack(rs_fd, NUL);
+        }
+#endif
 
 void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer) {
   static int delayAckCnt = 0;
@@ -1106,17 +1157,20 @@ void main_loop()
     {
       blank_read = 0;
       changed = false;
-
+      if ((getLogLevel() >= LOG_DEBUG) && (packet_length > 0))
+        {
+          debugPacketPrint(packet_buffer[PKT_DEST], packet_buffer, packet_length);
+        }
       if (_config_parameters.debug_RSProtocol_packets || getLogLevel() >= LOG_DEBUG_SERIAL) 
         logPacket(packet_buffer, packet_length);
 
       if (packet_length > 0 && packet_buffer[PKT_DEST] == _config_parameters.device_id)
       {
-
         if (getLogLevel() >= LOG_DEBUG)
-          logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
+          {
+            //logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
+          }
 
-        //logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
         //debugPacketPrint(0x00, packet_buffer, packet_length);
         //unsigned char ID, unsigned char *packet_buffer, int packet_length)
 /* 
