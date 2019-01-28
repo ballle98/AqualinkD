@@ -832,7 +832,7 @@ int main(int argc, char *argv[])
   exit(EXIT_SUCCESS);
 }
 
-/*
+
 void debugPacketPrint(unsigned char ID, unsigned char *packet_buffer, int packet_length)
 {
   char buff[1000];
@@ -859,9 +859,9 @@ void debugPacketPrint(unsigned char ID, unsigned char *packet_buffer, int packet
     cnt += sprintf(buff + cnt, "\n");
 
   //logMessage(LOG_NOTICE, "- AQUA SWG - \n%s", buff);
-  if (_config_parameters.debug_RSProtocol_packets)
-    writePacketLog(buff);
-  else
+  //if (_config_parameters.debug_RSProtocol_packets)
+  //  writePacketLog(buff);
+  //else
     logMessage(LOG_NOTICE, "%s", buff);
 }
 
@@ -881,6 +881,7 @@ void debugPacket(unsigned char *packet_buffer, int packet_length)
   lastID = packet_buffer[PKT_DEST];
 }
 
+/*
 void logPacket(unsigned char *packet_buffer, int packet_length)
 {
   static unsigned char last_packet_buffer[AQ_MAXPKTLEN];
@@ -1138,17 +1139,21 @@ void main_loop()
     {
       blank_read = 0;
       changed = false;
+      if ((getLogLevel() >= LOG_DEBUG) && (packet_length > 0))
+        {
+          debugPacketPrint(packet_buffer[PKT_DEST], packet_buffer, packet_length);
+        }
 /*
       if (_config_parameters.debug_RSProtocol_packets || getLogLevel() >= LOG_DEBUG_SERIAL) 
         logPacket(packet_buffer, packet_length);
 */
       if (packet_length > 0 && packet_buffer[PKT_DEST] == _config_parameters.device_id)
       {
-
         if (getLogLevel() >= LOG_DEBUG)
-          logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
+          {
+            //logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
+          }
 
-        //logMessage(LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
         //debugPacketPrint(0x00, packet_buffer, packet_length);
         //unsigned char ID, unsigned char *packet_buffer, int packet_length)
 /* 
