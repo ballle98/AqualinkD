@@ -31,10 +31,8 @@
 #include "init_buttons.h"
 #include "pda_aq_programmer.h"
 
-#ifdef AQ_DEBUG
-  #include <time.h>
-  #include "timespec_subtract.h"
-#endif
+#include <time.h>
+#include "timespec_subtract.h"
 
 bool select_sub_menu_item(struct aqualinkdata *aq_data, char* item_string);
 bool select_menu_item(struct aqualinkdata *aq_data, char* item_string);
@@ -103,6 +101,7 @@ unsigned char pop_aq_cmd(struct aqualinkdata *aq_data)
 {
   unsigned char cmd = NUL;
   //logMessage(LOG_DEBUG, "pop_aq_cmd\n");
+  // :TODO: is this true for PDA?
   // can only send a command every other ack.
   
   if (_last_sent_was_cmd == true) {
@@ -111,7 +110,7 @@ unsigned char pop_aq_cmd(struct aqualinkdata *aq_data)
   else if (aq_data->active_thread.thread_id != 0) {
     cmd = _pgm_command;
     _pgm_command = NUL;
-    //logMessage(LOG_DEBUG, "pop_aq_cmd '0x%02hhx' (programming)\n", cmd);
+    logMessage(LOG_DEBUG, "pop_aq_cmd '0x%02hhx' (programming)\n", cmd);
   }
   else if (_stack_place > 0) {
     cmd = _commands[0];
@@ -394,8 +393,10 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
     pthread_exit(0);
   }
 
+
+
+  // :TODO: use a mutex or semaphore instead of polling
   while ( (threadCtrl->aq_data->active_thread.thread_id != 0) && ( i++ <= tries) ) {
-    //logMessage (LOG_DEBUG, "Thread %d sleeping, waiting for thread %d to finish\n", threadCtrl->thread_id, threadCtrl->aq_data->active_thread.thread_id);
     logMessage (LOG_DEBUG, "Thread %d,%p (%s) sleeping, waiting for thread %d,%p (%s) to finish\n",
                 type, &threadCtrl->thread_id, ptypeName(type),
                 threadCtrl->aq_data->active_thread.ptype, threadCtrl->aq_data->active_thread.thread_id, ptypeName(threadCtrl->aq_data->active_thread.ptype));
@@ -403,7 +404,6 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
   }
   
   if (i >= tries) {
-    //logMessage (LOG_ERR, "Thread %d timeout waiting, ending\n",threadCtrl->thread_id);
     logMessage (LOG_ERR, "Thread %d,%p timeout waiting for thread %d,%p to finish\n",
                 type, &threadCtrl->thread_id, threadCtrl->aq_data->active_thread.ptype,
                 threadCtrl->aq_data->active_thread.thread_id);
@@ -414,11 +414,8 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
   threadCtrl->aq_data->active_thread.thread_id = &threadCtrl->thread_id;
   threadCtrl->aq_data->active_thread.ptype = type;
 
-  #ifdef AQ_DEBUG
-    clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->start_active_time);
-  #endif
+  clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->start_active_time);
 
-  //logMessage (LOG_DEBUG, "Thread %d is active\n", threadCtrl->aq_data->active_thread.thread_id);
   logMessage (LOG_DEBUG, "Thread %d,%p is active (%s)\n",
               threadCtrl->aq_data->active_thread.ptype,
               threadCtrl->aq_data->active_thread.thread_id,
@@ -427,9 +424,6 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
 
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
-  #ifndef AQ_DEBUG
-  logMessage(LOG_DEBUG, "Thread %d,%p (%s) finished\n",threadCtrl->aq_data->active_thread.ptype, threadCtrl->thread_id,ptypeName(threadCtrl->aq_data->active_thread.ptype));
-  #else
   struct timespec elapsed;
   clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->last_active_time);
   timespec_subtract(&elapsed, &threadCtrl->aq_data->last_active_time, &threadCtrl->aq_data->start_active_time);
@@ -438,7 +432,6 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
              threadCtrl->aq_data->active_thread.thread_id,
              ptypeName(threadCtrl->aq_data->active_thread.ptype),
              elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
-  #endif
 
   // Quick delay to allow for last message to be sent.
   delay(500);
@@ -650,7 +643,7 @@ void *get_aqualink_aux_labels( void *ptr )
     logMessage(LOG_WARNING, "Could not select REVIEW menu\n");
     cancel_menu();
     cleanAndTerminateThread(threadCtrl);
-    return ptr;
+    return NULL;
   }     
            
   if (select_sub_menu_item(aq_data, "AUX LABELS") != true) {
@@ -661,6 +654,8 @@ void *get_aqualink_aux_labels( void *ptr )
   }
 
   waitForMessage(aq_data, NULL, 5); // Receive 5 messages
+
+  logMessage(LOG_DEBUG, "PDA Init complete\n");
 
   cleanAndTerminateThread(threadCtrl);
   
