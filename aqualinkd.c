@@ -1186,6 +1186,8 @@ void main_loop()
      _aqualink_data.swg_ppm = 0;
   }
 
+  clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
+
   if (!start_net_services(&mgr, &_aqualink_data, &_config_parameters))
   {
     logMessage(LOG_ERR, "Can not start webserver on port %s.\n", _config_parameters.socket_port);

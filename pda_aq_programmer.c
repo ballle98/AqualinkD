@@ -33,11 +33,8 @@
 
 #include "init_buttons.h"
 
-
-#ifdef AQ_DEBUG
-  #include <time.h>
-  #include "timespec_subtract.h"
-#endif
+#include <time.h>
+#include "timespec_subtract.h"
 
 bool waitForPDAMessageHighlight(struct aqualinkdata *aq_data, int highlighIndex, int numMessageReceived);
 bool waitForPDAMessageType(struct aqualinkdata *aq_data, unsigned char mtype, int numMessageReceived);
@@ -62,11 +59,9 @@ void pda_programming_thread_check(struct aqualinkdata *aq_data)
 {
   static pthread_t thread_id = 0;
   static int ack_count = 0;
-  #ifdef AQ_DEBUG
-    static struct timespec start;
-    static struct timespec now;
-    struct timespec elapsed;
-  #endif
+  static struct timespec start;
+  static struct timespec now;
+  struct timespec elapsed;
 
   // Check for long lasting threads
   if (aq_data->active_thread.thread_id != 0) {
@@ -74,22 +69,16 @@ void pda_programming_thread_check(struct aqualinkdata *aq_data)
        printf ("**************** LAST POINTER SET %ld , %p ****************************\n",thread_id,&thread_id);
      
       thread_id = *aq_data->active_thread.thread_id;
-      #ifdef AQ_DEBUG
-         clock_gettime(CLOCK_REALTIME, &start);
-      #endif
+      clock_gettime(CLOCK_REALTIME, &start);
       printf ("**************** NEW POINTER SET %d, %ld %ld , %p %p ****************************\n",aq_data->active_thread.ptype,thread_id,*aq_data->active_thread.thread_id,&thread_id,aq_data->active_thread.thread_id);
       ack_count = 0;
     } else if (ack_count > MAX_ACK_FOR_THREAD) {
-      #ifdef AQ_DEBUG
        clock_gettime(CLOCK_REALTIME, &now);
        timespec_subtract(&elapsed, &now, &start);
        logMessage(LOG_ERR, "Thread %d,%p FAILED to finished in reasonable time, %d.%03ld sec, killing it.\n",
              aq_data->active_thread.ptype,
              aq_data->active_thread.thread_id,
              elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
-      #else
-        logMessage(LOG_ERR, "Thread %d,%p FAILED to finished in reasonable time, killing it!\n", aq_data->active_thread.ptype, aq_data->active_thread.thread_id)
-      #endif
 
       if (pthread_cancel(*aq_data->active_thread.thread_id) != 0)
           logMessage(LOG_ERR, "Thread kill failed\n");
@@ -547,7 +536,6 @@ void *get_aqualink_PDA_device_status( void *ptr )
   struct programmingThreadCtrl *threadCtrl;
   threadCtrl = (struct programmingThreadCtrl *) ptr;
   struct aqualinkdata *aq_data = threadCtrl->aq_data;
-  //int i;
   
   waitForSingleThreadOrTerminate(threadCtrl, AQ_PDA_DEVICE_STATUS);
   
@@ -559,8 +547,7 @@ void *get_aqualink_PDA_device_status( void *ptr )
  
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 }
 
 void *set_aqualink_PDA_init( void *ptr )
@@ -623,8 +610,7 @@ void *set_aqualink_PDA_init( void *ptr )
 
   cleanAndTerminateThread(threadCtrl);
 
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 }
 
 
@@ -633,7 +619,6 @@ void *set_aqualink_PDA_wakeinit( void *ptr )
   struct programmingThreadCtrl *threadCtrl;
   threadCtrl = (struct programmingThreadCtrl *) ptr;
   struct aqualinkdata *aq_data = threadCtrl->aq_data;
-  //int i=0;
 
   // At this point, we should probably just exit if there is a thread already going as 
   // it means the wake was called due to changing a device.
@@ -648,8 +633,7 @@ void *set_aqualink_PDA_wakeinit( void *ptr )
 
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 }
 
 
