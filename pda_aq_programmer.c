@@ -667,7 +667,7 @@ void *set_aqualink_PDA_wakeinit( void *ptr )
 
   // Get status of all devices
   if (! loopover_devices(aq_data)) {
-    LOG(PDA_LOG,LOG_ERR, "PDA Init :- can't find menu\n");
+    LOG(PDA_LOG,LOG_ERR, "PDA Wake Init :- can't find menu\n");
   }
 
   cleanAndTerminateThread(threadCtrl);

@@ -1552,6 +1552,8 @@ void main_loop()
   pthread_mutex_init(&_aqualink_data.mutex, NULL);
   pthread_cond_init(&_aqualink_data.thread_finished_cond, NULL);
 
+  clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
+
   if (!start_net_services(&_aqualink_data))
   {
     LOG(AQUA_LOG,LOG_ERR, "Can not start webserver on port %s.\n", _aqconfig_.socket_port);
