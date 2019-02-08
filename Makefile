@@ -55,7 +55,7 @@ MGFLAGS = -D MG_DISABLE_MD5 -D MG_DISABLE_HTTP_DIGEST_AUTH -D MG_DISABLE_MD5 -D 
 #       pda_aq_programmer.c devices_jandy.c onetouch.c onetouch_aq_programmer.c packetLogger.c devices_pentair.c color_lights.c mongoose.c
 
 SRCS = aqualinkd.c utils.c config.c aq_serial.c aq_panel.c aq_programmer.c net_services.c net_services_habridge.c json_messages.c rs_msg_utils.c\
-       devices_jandy.c packetLogger.c devices_pentair.c color_lights.c serialadapter.c aq_timer.c aq_scheduler.c web_config.c mongoose.c 
+       devices_jandy.c packetLogger.c devices_pentair.c color_lights.c serialadapter.c aq_timer.c aq_scheduler.c web_config.c mongoose.c timespec_subtract.c 
 
 
 AQ_FLAGS = 
@@ -89,7 +89,7 @@ DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
 DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS)
 
 # Other sources.
-#DBG_SRC = timespec_subtract.c debug_timer.c
+#DBG_SRC = debug_timer.c
 DBG_SRC = debug_timer.c
 SL_SRC = serial_logger.c aq_serial.c utils.c packetLogger.c rs_msg_utils.c
 LR_SRC = log_reader.c aq_serial.c utils.c packetLogger.c
