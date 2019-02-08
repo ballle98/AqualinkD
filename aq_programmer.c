@@ -41,10 +41,8 @@
 #include "config.h"
 #include "devices_jandy.h"
 
-#ifdef AQ_DEBUG
-  #include <time.h>
-  #include "timespec_subtract.h"
-#endif
+#include <time.h>
+#include "timespec_subtract.h"
 
 bool select_sub_menu_item(struct aqualinkdata *aq_data, char* item_string);
 bool select_menu_item(struct aqualinkdata *aq_data, char* item_string);
@@ -1109,9 +1107,7 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
   threadCtrl->aq_data->active_thread.thread_id = &threadCtrl->thread_id;
   threadCtrl->aq_data->active_thread.ptype = type;
 
-  #ifdef AQ_DEBUG
-    clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->start_active_time);
-  #endif
+  clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->start_active_time);
 
   LOG(PROG_LOG, LOG_INFO, "Programming: %s, %d\n", ptypeName(threadCtrl->aq_data->active_thread.ptype), threadCtrl->aq_data->active_thread.ptype);
 
@@ -1125,9 +1121,7 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
   pthread_mutex_lock(&threadCtrl->aq_data->mutex);
-  #ifndef AQ_DEBUG
-  LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished\n",threadCtrl->aq_data->active_thread.ptype, threadCtrl->thread_id,ptypeName(threadCtrl->aq_data->active_thread.ptype));
-  #else
+
   struct timespec elapsed;
   clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->last_active_time);
   timespec_subtract(&elapsed, &threadCtrl->aq_data->last_active_time, &threadCtrl->aq_data->start_active_time);
@@ -1136,7 +1130,6 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
              threadCtrl->aq_data->active_thread.thread_id,
              ptypeName(threadCtrl->aq_data->active_thread.ptype),
              elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
-  #endif
 
   threadCtrl->aq_data->active_thread.thread_id = 0;
   threadCtrl->aq_data->active_thread.ptype = AQP_NULL;

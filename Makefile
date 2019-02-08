@@ -76,7 +76,7 @@ SRCS = aqualinkd.c utils.c config.c aq_serial.c aq_panel.c aq_programmer.c \
        net_services.c net_services_habridge.c json_messages.c rs_msg_utils.c \
        devices_jandy.c packetLogger.c devices_pentair.c color_lights.c \
        serialadapter.c aq_timer.c aq_scheduler.c web_config.c serial_logger.c \
-       mongoose.c
+       mongoose.c timespec_subtract.c
 
 AQ_FLAGS =
 # Add source and flags depending on protocols to support.
