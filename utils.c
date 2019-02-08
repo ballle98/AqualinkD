@@ -606,6 +606,7 @@ void writePacketLog(char *buffer) {
     fputs(buffer, _packetLogFile);
   } 
 }
+
 void closePacketLog() {
   fclose(_packetLogFile);
 }

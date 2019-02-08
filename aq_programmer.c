@@ -432,9 +432,9 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
              threadCtrl->aq_data->active_thread.thread_id,
              ptypeName(threadCtrl->aq_data->active_thread.ptype),
              elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
-
+  // :TODO: This delay should not be needed
   // Quick delay to allow for last message to be sent.
-  delay(500);
+  // delay(500);
   threadCtrl->aq_data->active_thread.thread_id = 0;
   threadCtrl->aq_data->active_thread.ptype = AQP_NULL;
   threadCtrl->thread_id = 0;
