@@ -28,10 +28,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <fcntl.h>
-
-#ifdef AD_DEBUG
 #include <sys/time.h>
-#endif
 
 #ifndef _UTILS_C_
 #define _UTILS_C_
@@ -517,16 +514,12 @@ void _LOG(int16_t from, int msg_level,  char *message)
     if (msg_level == LOG_ERR) {
       fprintf(stderr, "%s", message);
     } else {
-#ifndef AD_DEBUG
-      printf("%s", message);
-#else
       struct timespec tspec;
       struct tm localtm;
       clock_gettime(CLOCK_REALTIME, &tspec);
       char timeStr[TIMESTAMP_LENGTH];
       strftime(timeStr, sizeof(timeStr), "%H:%M:%S", localtime_r(&tspec.tv_sec, &localtm));
       printf("%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
-#endif
     }
   }
 }
@@ -753,6 +746,7 @@ void writePacketLog(char *buffer) {
     fputs(buffer, _packetLogFile);
   } 
 }
+
 void closePacketLog() {
   fclose(_packetLogFile);
 }
