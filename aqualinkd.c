@@ -924,19 +924,23 @@ void logPacket(unsigned char *packet_buffer, int packet_length)
 // :TODO: enable last active
 #if 0
       bool bPDA_in_standby = false;
-      if (_aqualink_data.active_thread.thread_id == 0)
+      if ((_aqualink_data.active_thread.thread_id == 0) &&
+          ((packet_buffer[PKT_CMD] == CMD_STATUS) ||
+           (packet_buffer[PKT_CMD] == CMD_PROBE)))
         {
-          time_t now;
-          time (&now);
-          if (difftime (now, _aqualink_data.last_active_time) > 35)
-            {
-              aq_programmer (AQ_PDA_DEVICE_STATUS, NULL,
-                             &_aqualink_data);
-            }
-          else if (difftime (now, _aqualink_data.last_active_time) > 5)
+          struct timespec now;
+          struct timespec elapsed;
+          clock_gettime(CLOCK_REALTIME, &now);
+          timespec_subtract(&elapsed, &now, &(_aqualink_data.last_active_time));
+          if (elapsed.tv_sec <= 30)
             {
               bPDA_in_standby = true;
               pda_m_clear ();
+            }
+          else
+            {
+              aq_programmer (AQ_PDA_DEVICE_STATUS, NULL,
+                             &_aqualink_data);
             }
         }
       // Can only send command to status message on PDA.
