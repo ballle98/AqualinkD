@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -22,7 +23,7 @@ bool waitForEitherMessage(struct aqualinkdata *aqdata, char* message1, char* mes
 bool select_sub_menu_item(struct aqualinkdata *aqdata, char* item_string);
 bool select_menu_item(struct aqualinkdata *aqdata, char* item_string);
 
-void send_cmd(unsigned char cmd);
+bool send_cmd(unsigned char cmd);
 void cancel_menu();
 
 void waitfor_queue2empty();
@@ -39,6 +40,9 @@ unsigned char _allb_pgm_command = NUL;
 //unsigned char _ot_allb_pgm_command = NUL;
 
 bool _last_sent_was_cmd = false;
+
+static pthread_mutex_t _pgm_command_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t _pgm_command_sent_cond = PTHREAD_COND_INITIALIZER;
 
 bool push_allb_cmd(unsigned char cmd);
 
@@ -93,11 +97,14 @@ unsigned char pop_allb_cmd(struct aqualinkdata *aqdata)
   if (in_programming_mode(aqdata) && ( in_ot_programming_mode(aqdata) == false  && in_iaqt_programming_mode(aqdata) == false )) {
   //if (aqdata->active_thread.thread_id != 0) {
     if ( _allb_pgm_command != NUL && aqdata->last_packet_type == CMD_STATUS) {
+      pthread_mutex_lock(&_pgm_command_mutex);
       cmd = _allb_pgm_command;
       _allb_pgm_command = NUL;
       if (cmd) {
         LOG(ALLB_LOG, LOG_DEBUG_SERIAL, "RS SEND cmd %s '0x%02hhx' (programming)\n", cmd_to_string(cmd), cmd);
       }
+      pthread_cond_signal(&_pgm_command_sent_cond);
+      pthread_mutex_unlock(&_pgm_command_mutex);
     } else if (_allb_pgm_command != NUL) {
       LOG(ALLB_LOG, LOG_DEBUG_SERIAL, "RS Waiting to send cmd '0x%02hhx' (programming)\n", _allb_pgm_command);
     } else {
@@ -1344,14 +1351,31 @@ void longwaitfor_queue2empty()
   _waitfor_queue2empty(true);
 }
 
-void send_cmd(unsigned char cmd)
+bool send_cmd(unsigned char cmd)
 {
-  waitfor_queue2empty();
-  
-  _allb_pgm_command = cmd;
-  //delay(200);
+  bool ret = true;
+  int pret = 0;
+  struct timespec max_wait;
 
+  clock_gettime(CLOCK_REALTIME, &max_wait);
+  max_wait.tv_sec += 5;
+
+  pthread_mutex_lock(&_pgm_command_mutex);
+  _allb_pgm_command = cmd;
   LOG(ALLB_LOG, LOG_INFO, "Queue send %s '0x%02hhx' to controller (programming)\n", cmd_to_string(_allb_pgm_command), _allb_pgm_command);
+  while (_allb_pgm_command != NUL) {
+    if ((pret = pthread_cond_timedwait(&_pgm_command_sent_cond,
+                                      &_pgm_command_mutex, &max_wait))) {
+      LOG(PROG_LOG, LOG_ERR, "send_cmd 0x%02hhx err %s\n", cmd, strerror(pret));
+      ret = false;
+      break;
+    }
+  }
+  if (ret)
+    LOG(PROG_LOG, LOG_INFO, "sent '0x%02hhx' to controller\n", cmd);
+  pthread_mutex_unlock(&_pgm_command_mutex);
+
+  return ret;
 }
 
 void force_queue_delete()
