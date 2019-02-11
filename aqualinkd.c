@@ -1029,6 +1029,7 @@ void main_loop()
   int i;
   //int delayAckCnt = 0;
 
+
   // NSF need to find a better place to init this.
   //_aqualink_data.aq_command = 0x00;
   _aqualink_data.simulate_panel = false;
@@ -1065,6 +1066,9 @@ void main_loop()
      _aqualink_data.swg_percent = 0;
 
   clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
+
+  pthread_mutex_init(&_aqualink_data.mutex, NULL);
+  pthread_cond_init(&_aqualink_data.thread_finished_cond, NULL);
 
   if (!start_net_services(&mgr, &_aqualink_data, &_config_parameters))
   {
