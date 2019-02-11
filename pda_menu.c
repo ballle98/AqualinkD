@@ -154,15 +154,22 @@ pda_menu_type pda_m_type()
 
 
 /*
+--- FW Version ---
+Line 0 =
+Line 1 =  PDA-PS4 Combo
+Line 2 =
+Line 3 = Firmware Version
+Line 4 =
+Line 5 =   PPD: PDA 1.2
 --- Main Menu ---
-Line 0 = 
-Line 1 = AIR  
+Line 0 =
+Line 1 = AIR
 (Line 4 first, Line 2 last, Highligh when finished)
 --- Equiptment Status  ---
 Line 0 = EQUIPMENT STATUS
 (Line 0 is first. No Highlight, everything in list is on)
 --- Equiptment on/off menu --
-Line 0 =    EQUIPMENT    
+Line 0 =    EQUIPMENT
 (Line 0 is first. Highlight when complete)
 */
 
@@ -314,6 +321,7 @@ bool pda_m_clear()
   logMessage(LOG_DEBUG, "PDA menu clear\n");
 
   _hlightindex = -1;
+  //_pda_m_type = PM_UNKNOWN;
   memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
   return true;
 }

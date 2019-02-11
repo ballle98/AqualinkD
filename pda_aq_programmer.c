@@ -439,7 +439,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
   if (device > TOTAL_BUTTONS) {
     logMessage(LOG_ERR, "PDA Device On/Off :- bad device number '%d'\n",device);
     cleanAndTerminateThread(threadCtrl);
-    return ptr;
+    return NULL;
   }
 
   logMessage(LOG_INFO, "PDA Device On/Off, device '%s', state %d\n",aq_data->aqbuttons[device].pda_label,state);
@@ -447,25 +447,24 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
   if (! goto_pda_menu(aq_data, PM_EQUIPTMENT_CONTROL)) {
     logMessage(LOG_ERR, "PDA Device On/Off :- can't find EQUIPTMENT CONTROL menu\n");
     cleanAndTerminateThread(threadCtrl);
-    return ptr;
+    return NULL;
   }
 
   // If single config (Spa OR pool) rather than (Spa AND pool) heater is TEMP1 and TEMP2
   if (aq_data->single_device == TRUE && device == POOL_HEAT_INDEX) { // rename Heater and Spa
-    sprintf(device_name,"%-13s\n","TEMP1");
+    snprintf(device_name, sizeof(device_name), "%-13s\n","TEMP1");
   } else if (aq_data->single_device == TRUE && device == SPA_HEAT_INDEX)  {// rename Heater and Spa
-    sprintf(device_name,"%-13s\n","TEMP2");
+    snprintf(device_name, sizeof(device_name), "%-13s\n","TEMP2");
   } else {
     //Pad name with spaces so something like "SPA" doesn't match "SPA BLOWER"
-    sprintf(device_name,"%-13s\n",aq_data->aqbuttons[device].pda_label);
+    snprintf(device_name, sizeof(device_name), "%-13s\n",aq_data->aqbuttons[device].pda_label);
   }
 
   if ( find_pda_menu_item(aq_data, device_name, 13) ) {
     if (aq_data->aqbuttons[device].led->state != state) {
-      //printf("*** Select State ***\n");
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', changing state\n",aq_data->aqbuttons[device].pda_label,state);
       send_cmd(KEY_PDA_SELECT);
-      while (get_aq_cmd_length() > 0) { delay(500); }
+      // while (get_aq_cmd_length() > 0) { delay(500); }
       // If you are turning on a heater there will be a sub menu to set temp
       if ((state == ON) && ((device == POOL_HEAT_INDEX) || (device == SPA_HEAT_INDEX))) {
           if (! waitForPDAnextMenu(aq_data)) {
@@ -496,8 +495,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
 
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 
 }
 

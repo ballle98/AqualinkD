@@ -36,7 +36,6 @@
 
 bool select_sub_menu_item(struct aqualinkdata *aq_data, char* item_string);
 bool select_menu_item(struct aqualinkdata *aq_data, char* item_string);
-//void send_cmd(unsigned char cmd, struct aqualinkdata *aq_data);
 void cancel_menu();
 
 
@@ -54,9 +53,6 @@ void *set_aqualink_light_colormode( void *ptr );
 void *set_aqualink_PDA_init( void *ptr );
 void *set_aqualink_SWG( void *ptr );
 
-//void *get_aqualink_PDA_device_status( void *ptr );
-//void *set_aqualink_PDA_device_on_off( void *ptr );
-
 bool waitForButtonState(struct aqualinkdata *aq_data, aqkey* button, aqledstate state, int numMessageReceived);
 
 //bool waitForMessage(struct aqualinkdata *aq_data, char* message, int numMessageReceived);
@@ -68,9 +64,9 @@ bool push_aq_cmd(unsigned char cmd);
 int _stack_place = 0;
 unsigned char _commands[MAX_STACK];
 //unsigned char pgm_commands[MAX_STACK];
-unsigned char _pgm_command = NUL;
-
-bool _last_sent_was_cmd = false;
+static unsigned char _pgm_command = NUL;
+static pthread_mutex_t _pgm_command_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t _pgm_command_sent_cond = PTHREAD_COND_INITIALIZER;
 
 // External view of adding to queue
 void aq_send_cmd(unsigned char cmd) {
@@ -99,18 +95,22 @@ int get_aq_cmd_length()
 
 unsigned char pop_aq_cmd(struct aqualinkdata *aq_data)
 {
+  static bool _last_sent_was_cmd = false;
+
   unsigned char cmd = NUL;
   //logMessage(LOG_DEBUG, "pop_aq_cmd\n");
   // :TODO: is this true for PDA?
   // can only send a command every other ack.
-  
-  if (_last_sent_was_cmd == true) {
+  if (!pda_mode() && (_last_sent_was_cmd == true)) {
     _last_sent_was_cmd= false;
   } 
   else if (aq_data->active_thread.thread_id != 0) {
+    pthread_mutex_lock(&_pgm_command_mutex);
     cmd = _pgm_command;
     _pgm_command = NUL;
     logMessage(LOG_DEBUG, "pop_aq_cmd '0x%02hhx' (programming)\n", cmd);
+    pthread_cond_signal(&_pgm_command_sent_cond);
+    pthread_mutex_unlock(&_pgm_command_mutex);
   }
   else if (_stack_place > 0) {
     cmd = _commands[0];
@@ -393,24 +393,35 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
     pthread_exit(0);
   }
 
-
-
-  // :TODO: use a mutex or semaphore instead of polling
-  while ( (threadCtrl->aq_data->active_thread.thread_id != 0) && ( i++ <= tries) ) {
-    logMessage (LOG_DEBUG, "Thread %d,%p (%s) sleeping, waiting for thread %d,%p (%s) to finish\n",
-                type, &threadCtrl->thread_id, ptypeName(type),
-                threadCtrl->aq_data->active_thread.ptype, threadCtrl->aq_data->active_thread.thread_id, ptypeName(threadCtrl->aq_data->active_thread.ptype));
-    sleep(waitTime);
-  }
   
-  if (i >= tries) {
-    logMessage (LOG_ERR, "Thread %d,%p timeout waiting for thread %d,%p to finish\n",
-                type, &threadCtrl->thread_id, threadCtrl->aq_data->active_thread.ptype,
-                threadCtrl->aq_data->active_thread.thread_id);
-    free(threadCtrl);
-    pthread_exit(0);
-  }
- 
+  int ret = 0;
+  struct timespec max_wait;
+  clock_gettime(CLOCK_REALTIME, &max_wait);
+  max_wait.tv_sec += 30;
+
+  pthread_mutex_lock(&threadCtrl->aq_data->mutex);
+  while (threadCtrl->aq_data->active_thread.thread_id != 0)
+    {
+      logMessage (LOG_DEBUG, "Thread %d,%p (%s) sleeping, waiting for thread %d,%p (%s) to finish\n",
+                  type, &threadCtrl->thread_id, ptypeName(type),
+                  threadCtrl->aq_data->active_thread.ptype, threadCtrl->aq_data->active_thread.thread_id, ptypeName(threadCtrl->aq_data->active_thread.ptype));
+      if ((ret = pthread_cond_timedwait(&threadCtrl->aq_data->thread_finished_cond,
+                                        &threadCtrl->aq_data->mutex, &max_wait)))
+        {
+          logMessage (LOG_ERR, "Thread %d,%p err %s waiting for thread %d,%p to finish\n",
+                      type, &threadCtrl->thread_id, strerror(ret),
+                      threadCtrl->aq_data->active_thread.ptype,
+                      threadCtrl->aq_data->active_thread.thread_id);
+
+          if ((ret = pthread_mutex_unlock(&threadCtrl->aq_data->mutex)))
+            {
+              logMessage (LOG_ERR, "waitForSingleThreadOrTerminate mutex unlock ret %s\n", strerror(ret));
+            }
+          free(threadCtrl);
+          pthread_exit(0);
+        }
+    }
+
   threadCtrl->aq_data->active_thread.thread_id = &threadCtrl->thread_id;
   threadCtrl->aq_data->active_thread.ptype = type;
 
@@ -420,11 +431,14 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
               threadCtrl->aq_data->active_thread.ptype,
               threadCtrl->aq_data->active_thread.thread_id,
               ptypeName(threadCtrl->aq_data->active_thread.ptype));
+  pthread_mutex_unlock(&threadCtrl->aq_data->mutex);
 }
 
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
   struct timespec elapsed;
+
+  pthread_mutex_lock(&threadCtrl->aq_data->mutex);
   clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->last_active_time);
   timespec_subtract(&elapsed, &threadCtrl->aq_data->last_active_time, &threadCtrl->aq_data->start_active_time);
   logMessage(LOG_DEBUG, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
@@ -437,6 +451,9 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
   // delay(500);
   threadCtrl->aq_data->active_thread.thread_id = 0;
   threadCtrl->aq_data->active_thread.ptype = AQP_NULL;
+  pthread_cond_signal(&threadCtrl->aq_data->thread_finished_cond);
+  pthread_mutex_unlock(&threadCtrl->aq_data->mutex);
+
   threadCtrl->thread_id = 0;
   free(threadCtrl);
   pthread_exit(0);
@@ -627,10 +644,10 @@ void *set_aqualink_SWG( void *ptr )
 
 void *get_aqualink_aux_labels( void *ptr )
 {
-  struct programmingThreadCtrl *threadCtrl;
-  threadCtrl = (struct programmingThreadCtrl *) ptr;
+  struct programmingThreadCtrl *threadCtrl =
+      (struct programmingThreadCtrl *) ptr;
   struct aqualinkdata *aq_data = threadCtrl->aq_data;
-  
+
   waitForSingleThreadOrTerminate(threadCtrl, AQ_GET_AUX_LABELS);
 
   if (pda_mode() == true) {
@@ -659,8 +676,7 @@ void *get_aqualink_aux_labels( void *ptr )
 
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 }
 
 void *set_aqualink_light_colormode( void *ptr )
@@ -1180,20 +1196,34 @@ void send_cmd(unsigned char cmd, struct aqualinkdata *aq_data)
 }
 */
 
-void send_cmd(unsigned char cmd)
+bool send_cmd(unsigned char cmd)
 {
-  int i=0;
-  // If there is an unsent command, wait.
-  while ( (_pgm_command != NUL) && ( i++ < 10) ) {
-    //sleep(1); // NSF Change to smaller time.
-    //logMessage(LOG_ERR, "********  QUEUE IS FULL ********  delay\n", pgm_command);
-    delay(500);
-  }
-  
-  _pgm_command = cmd;
-  //delay(200);
+  bool ret=true;
+  int pret = 0;
+  struct timespec max_wait;
 
+  clock_gettime(CLOCK_REALTIME, &max_wait);
+  max_wait.tv_sec += 5;
+
+  pthread_mutex_lock(&_pgm_command_mutex);
+  _pgm_command = cmd;
   logMessage(LOG_INFO, "Queue send '0x%02hhx' to controller (programming)\n", _pgm_command);
+  while (_pgm_command != NUL)
+    {
+      if ((pret = pthread_cond_timedwait(&_pgm_command_sent_cond,
+                                        &_pgm_command_mutex, &max_wait)))
+        {
+          logMessage (LOG_ERR, "send_cmd 0x%02hhx err %s\n",
+                      cmd, strerror(pret));
+          ret = false;
+          break;
+        }
+    }
+  if (ret) {
+      logMessage(LOG_INFO, "sent '0x%02hhx' to controller\n", _pgm_command);
+  }
+  pthread_mutex_unlock(&_pgm_command_mutex);
+  return ret;
 }
 
 /*
