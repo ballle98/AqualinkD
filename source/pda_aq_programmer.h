@@ -47,7 +47,7 @@ void *set_aqualink_PDA_light_mode( void *ptr );
 
 /*
 // These are from aq_programmer.c , exposed here for PDA AQ PROGRAMMER
-void send_cmd(unsigned char cmd);
+bool send_cmd(unsigned char cmd);
 bool push_aq_cmd(unsigned char cmd);
 bool waitForMessage(struct aqualinkdata *aq_data, char* message, int numMessageReceived);
 void waitfor_queue2empty();
