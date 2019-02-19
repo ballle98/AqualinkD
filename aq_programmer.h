@@ -59,7 +59,8 @@ void aq_send_cmd(unsigned char cmd);
 unsigned char pop_aq_cmd(struct aqualinkdata *aq_data);
 //bool push_aq_cmd(unsigned char cmd);
 
-//void send_cmd(unsigned char cmd, struct aqualinkdata *aq_data);
+bool send_cmd(unsigned char cmd);
+
 //void cancel_menu(struct aqualinkdata *aq_data);
 
 //void *set_aqualink_time( void *ptr );
@@ -70,7 +71,6 @@ int setpoint_check(int type, int value, struct aqualinkdata *aqdata);
 const char *ptypeName(program_type type);
 
 // These shouldn't be here, but just for the PDA AQ PROGRAMMER
-void send_cmd(unsigned char cmd);
 bool push_aq_cmd(unsigned char cmd);
 void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, program_type type);
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl);

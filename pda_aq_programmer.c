@@ -452,12 +452,12 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
 
   // If single config (Spa OR pool) rather than (Spa AND pool) heater is TEMP1 and TEMP2
   if (aq_data->single_device == TRUE && device == POOL_HEAT_INDEX) { // rename Heater and Spa
-    sprintf(device_name,"%-13s\n","TEMP1");
+    snprintf(device_name, sizeof(device_name), "%-13s\n","TEMP1");
   } else if (aq_data->single_device == TRUE && device == SPA_HEAT_INDEX)  {// rename Heater and Spa
-    sprintf(device_name,"%-13s\n","TEMP2");
+    snprintf(device_name, sizeof(device_name), "%-13s\n","TEMP2");
   } else {
     //Pad name with spaces so something like "SPA" doesn't match "SPA BLOWER"
-    sprintf(device_name,"%-13s\n",aq_data->aqbuttons[device].pda_label);
+    snprintf(device_name, sizeof(device_name), "%-13s\n",aq_data->aqbuttons[device].pda_label);
   }
 
   if ( find_pda_menu_item(aq_data, device_name, 13) ) {
