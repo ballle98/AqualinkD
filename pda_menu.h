@@ -4,6 +4,7 @@
 
 
 #define PDA_LINES    10 // There is only 9 lines, but add buffer to make shifting easier
+#define PDA_MAX_MENU_DEPTH 4
 
 typedef enum pda_menu_type {
   PM_UNKNOWN,
@@ -29,6 +30,13 @@ typedef enum pda_menu_type {
   PM_EQUIPTMENT_STATUS,
   PM_PALM_OPTIONS // This seems to be only older revisions
 } pda_menu_type;
+
+// PDA Line 4 = POOL MODE    OFF
+// PDA Line 5 = POOL HEATER  OFF
+// PDA Line 6 = SPA MODE     OFF
+// PDA Line 7 = SPA HEATER   OFF
+// PDA Line 8 = MENU
+// PDA Line 9 = EQUIPMENT ON/OFF
 
 /*
 typedef enum pda_home_menu_item {
@@ -76,5 +84,9 @@ int pda_find_m_index(char *text);
 int pda_find_m_index_case(char *text, int limit);
 //int pda_find_m_index_swcase(char *text, int limit);
 bool pda_m_clear();
+bool update_pda_menu_type();
+bool wait_pda_m_hlightindex_update(struct timespec *max_wait);
+bool wait_pda_m_hlightindex_change(struct timespec *max_wait);
+int wait_pda_m_hlightindex(struct timespec *max_wait);
 
 #endif
