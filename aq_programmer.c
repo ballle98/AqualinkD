@@ -644,10 +644,10 @@ void *set_aqualink_SWG( void *ptr )
 
 void *get_aqualink_aux_labels( void *ptr )
 {
-  struct programmingThreadCtrl *threadCtrl;
-  threadCtrl = (struct programmingThreadCtrl *) ptr;
+  struct programmingThreadCtrl *threadCtrl =
+      (struct programmingThreadCtrl *) ptr;
   struct aqualinkdata *aq_data = threadCtrl->aq_data;
-  
+
   waitForSingleThreadOrTerminate(threadCtrl, AQ_GET_AUX_LABELS);
 
   if (pda_mode() == true) {
@@ -676,8 +676,7 @@ void *get_aqualink_aux_labels( void *ptr )
 
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 }
 
 void *set_aqualink_light_colormode( void *ptr )
