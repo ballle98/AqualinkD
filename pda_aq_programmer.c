@@ -217,6 +217,7 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
   
   while (pda_m_type() == PM_FW_VERSION || pda_m_type() == PM_BUILDING_HOME) {
     //logMessage(LOG_DEBUG, "******************PDA Device programmer delay on firmware or building home menu\n");
+    // :TODO: remove this delay
     delay(500);
   }
 
@@ -329,7 +330,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
   if (device > TOTAL_BUTTONS) {
     logMessage(LOG_ERR, "PDA Device On/Off :- bad device number '%d'\n",device);
     cleanAndTerminateThread(threadCtrl);
-    return ptr;
+    return NULL;
   }
 
   logMessage(LOG_INFO, "PDA Device On/Off, device '%s', state %d\n",aq_data->aqbuttons[device].pda_label,state);
@@ -337,7 +338,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
   if (! goto_pda_menu(aq_data, PM_EQUIPTMENT_CONTROL)) {
     logMessage(LOG_ERR, "PDA Device On/Off :- can't find main menu\n");
     cleanAndTerminateThread(threadCtrl);
-    return ptr;
+    return NULL;
   }
 
   // If single config (Spa OR pool) rather than (Spa AND pool) heater is TEMP1 and TEMP2
@@ -352,10 +353,9 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
 
   if ( find_pda_menu_item(aq_data, device_name, 13) ) {
     if (aq_data->aqbuttons[device].led->state != state) {
-      //printf("*** Select State ***\n");
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', changing state\n",aq_data->aqbuttons[device].pda_label,state);
       send_cmd(KEY_PDA_SELECT);
-      while (get_aq_cmd_length() > 0) { delay(500); }
+      //while (get_aq_cmd_length() > 0) { delay(500); }
     } else {
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', not changing state, is same\n",aq_data->aqbuttons[device].pda_label,state);
     }
@@ -363,13 +363,11 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
     logMessage(LOG_ERR, "PDA Device On/Off, device '%s' not found\n",aq_data->aqbuttons[device].pda_label);
   }
 
-  goto_pda_menu(aq_data, PM_HOME);
-  //while (_pgm_command != NUL) { delay(500); }
+  //goto_pda_menu(aq_data, PM_HOME);
 
   cleanAndTerminateThread(threadCtrl);
   
-  // just stop compiler error, ptr is not valid as it's just been freed
-  return ptr;
+  return NULL;
 
 }
 
