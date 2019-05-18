@@ -39,6 +39,7 @@ typedef struct aqualinkkey
   char *pda_label;
   unsigned char code;
   int dz_idx;
+  int hab_id;
 } aqkey;
 
 
