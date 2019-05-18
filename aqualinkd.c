@@ -39,6 +39,7 @@
 #include "net_services.h"
 #include "pda_menu.h"
 #include "version.h"
+#include "net_services_habridge.h"
 
 
 #define DEFAULT_CONFIG_FILE "./aqualinkd.conf"
@@ -989,13 +990,18 @@ int main(int argc, char *argv[]) {
   logMessage(LOG_NOTICE, "Config idx spa thermostat  = %d\n", _config_parameters.dzidx_spa_thermostat);
   */
 #endif // MG_DISABLE_MQTT
+  logMessage(LOG_NOTICE, "Config habridge_server   = %s\n", _config_parameters.habridge_server);
   logMessage(LOG_NOTICE, "Config deamonize         = %s\n", bool2text(_config_parameters.deamonize));
   logMessage(LOG_NOTICE, "Config log_file          = %s\n", _config_parameters.log_file);
   logMessage(LOG_NOTICE, "Config light_pgm_mode    = %.2f\n", _config_parameters.light_programming_mode);
   // logMessage (LOG_NOTICE, "Config serial_port = %s\n", config_parameters->serial_port);
 
-  for (i=0; i < TOTAL_BUTONS; i++) {
-    logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | PDAlabel %-15s | dzidx %d\n", _aqualink_data.aqbuttons[i].name, _aqualink_data.aqbuttons[i].label , _aqualink_data.aqbuttons[i].pda_label, _aqualink_data.aqbuttons[i].dz_idx);
+  for (i=0; i < TOTAL_BUTTONS; i++) {
+    logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | PDAlabel %-15s | dzidx %d | habid %d\n",
+               _aqualink_data.aqbuttons[i].name, _aqualink_data.aqbuttons[i].label ,
+               _aqualink_data.aqbuttons[i].pda_label,
+               _aqualink_data.aqbuttons[i].dz_idx,
+               _aqualink_data.aqbuttons[i].hab_id);
     //logMessage(LOG_NOTICE, "Button %d\n", i+1, _aqualink_data.aqbuttons[i].label , _aqualink_data.aqbuttons[i].dz_idx);
   }
 
@@ -1199,6 +1205,11 @@ void main_loop() {
     exit(EXIT_FAILURE);
   }
 
+  if (!start_habridge_updater(&_config_parameters, &_aqualink_data)) {
+    logMessage(LOG_ERR, "Can not start start_habridge_updater\n");
+    exit(EXIT_FAILURE);
+  }
+
   signal(SIGINT, intHandler);
   signal(SIGTERM, intHandler);
 
@@ -1252,6 +1263,8 @@ void main_loop() {
             // warnings and errors.  If something changed, notify any listeners
             if (process_packet(packet_buffer, packet_length) != false) {
                 broadcast_aqualinkstate(mgr.active_connections);
+                // :TODO: may need to also update if read_all_devices == true
+                update_habridge_state(&_config_parameters, &_aqualink_data);
             }
 
             ack_packet(rs_fd, packet_buffer);
