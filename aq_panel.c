@@ -263,6 +263,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_PUMP;
   aqdata->aqbuttons[index].code = KEY_PUMP;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -273,6 +274,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_SPA;
     aqdata->aqbuttons[index].code = KEY_SPA;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   }
@@ -283,6 +285,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_AUX1;
   aqdata->aqbuttons[index].code = KEY_AUX1;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -292,6 +295,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_AUX2;
   aqdata->aqbuttons[index].code = KEY_AUX2;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -301,6 +305,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_AUX3;
   aqdata->aqbuttons[index].code = KEY_AUX3;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -312,6 +317,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUX4;
     aqdata->aqbuttons[index].code = KEY_AUX4;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
 
@@ -321,6 +327,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUX5;
     aqdata->aqbuttons[index].code = KEY_AUX5;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++; 
   }
@@ -332,6 +339,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUX6;
     aqdata->aqbuttons[index].code = KEY_AUX6;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
 
@@ -341,6 +349,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUX7;
     aqdata->aqbuttons[index].code = KEY_AUX7;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   }
@@ -362,6 +371,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB1;
     aqdata->aqbuttons[index].code = KEY_AUXB1;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   
@@ -371,6 +381,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB2;
     aqdata->aqbuttons[index].code = KEY_AUXB2;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   
@@ -380,6 +391,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB3;
     aqdata->aqbuttons[index].code = KEY_AUXB3;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   
@@ -389,6 +401,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB4;
     aqdata->aqbuttons[index].code = KEY_AUXB4;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   }
@@ -400,6 +413,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB5;
     aqdata->aqbuttons[index].code = KEY_AUXB5;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
  
@@ -409,6 +423,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB6;
     aqdata->aqbuttons[index].code = KEY_AUXB6;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   
@@ -418,7 +433,8 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB7;
     aqdata->aqbuttons[index].code = KEY_AUXB7;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
-   index++;
+    aqdata->aqbuttons[index].hab_id = 0;
+    index++;
 
     aqdata->aqbuttons[index].led = &aqdata->aqualinkleds[24-1]; // doesn't actually exist
     aqdata->aqbuttons[index].led->state = OFF; // Since there is no LED in data, set to off and allow messages to turn it on
@@ -426,6 +442,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
     aqdata->aqbuttons[index].name = BTN_AUXB8;
     aqdata->aqbuttons[index].code = KEY_AUXB8;
     aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+    aqdata->aqbuttons[index].hab_id = 0;
     aqdata->aqbuttons[index].special_mask = 0;
     index++;
   }
@@ -440,6 +457,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
       aqdata->aqbuttons[index].name = BTN_AUX6;
       aqdata->aqbuttons[index].code = KEY_AUX6;
       aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+      aqdata->aqbuttons[index].hab_id = 0;
       aqdata->aqbuttons[index].special_mask = 0;
       index++;
     }
@@ -461,6 +479,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_POOL_HTR;
   aqdata->aqbuttons[index].code = KEY_POOL_HTR;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -470,6 +489,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_SPA_HTR;
   aqdata->aqbuttons[index].code = KEY_SPA_HTR;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
   
@@ -479,6 +499,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
   aqdata->aqbuttons[index].name = BTN_SOLAR_HTR;
   aqdata->aqbuttons[index].code = KEY_SOLAR_HTR;
   aqdata->aqbuttons[index].dz_idx = DZ_NULL_IDX;
+  aqdata->aqbuttons[index].hab_id = 0;
   aqdata->aqbuttons[index].special_mask = 0;
   index++;
 
