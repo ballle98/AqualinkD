@@ -43,6 +43,7 @@
 #include "packetLogger.h"
 #include "aquapure.h"
 #include "version.h"
+#include "net_services_habridge.h"
 
 //#define PROCESS_INCOMPLETE_MESSAGES
 
@@ -900,6 +901,8 @@ int main(int argc, char *argv[])
   logMessage(LOG_NOTICE, "Config idx spa thermostat  = %d\n", _config_parameters.dzidx_spa_thermostat);
   */
 #endif // MG_DISABLE_MQTT
+  logMessage(LOG_NOTICE, "Config habridge_server   = %s\n", _config_parameters.habridge_server);
+  logMessage(LOG_NOTICE, "Config habridge_user     = %s\n", _config_parameters.habridge_user);
   logMessage(LOG_NOTICE, "Config deamonize         = %s\n", bool2text(_config_parameters.deamonize));
   logMessage(LOG_NOTICE, "Config log_file          = %s\n", _config_parameters.log_file);
   logMessage(LOG_NOTICE, "Config light_pgm_mode    = %.2f\n", _config_parameters.light_programming_mode);
@@ -913,7 +916,7 @@ int main(int argc, char *argv[])
     logMessage(LOG_NOTICE, "Ignore SWG 0 msg count   = %d\n", _config_parameters.swg_zero_ignore);
 
 
-  for (i = 0; i < TOTAL_BUTONS; i++)
+  for (i=0; i < TOTAL_BUTTONS; i++)
   {
     char vsp[] = "None";
     for (j = 0; j < MAX_PUMPS; j++) {
@@ -924,13 +927,19 @@ int main(int argc, char *argv[])
       }
     }
     if (!_config_parameters.pda_mode) {
-      logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | VSP ID %-4s  | dzidx %d | %s\n", 
-                           _aqualink_data.aqbuttons[i].name, _aqualink_data.aqbuttons[i].label, vsp, _aqualink_data.aqbuttons[i].dz_idx,
-                          (i>0 && (i==_config_parameters.light_programming_button_pool || i==_config_parameters.light_programming_button_spa)?"Programable":"")  );
+      logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | VSP ID %-4s  | dzidx %d | habid %d | %s\n",
+                 _aqualink_data.aqbuttons[i].name,
+                 _aqualink_data.aqbuttons[i].label,
+                 _aqualink_data.aqbuttons[i].dz_idx,
+                 _aqualink_data.aqbuttons[i].hab_id,
+                 (i>0 && (i==_config_parameters.light_programming_button_pool || i==_config_parameters.light_programming_button_spa)?"Programable":""));
     } else {
-      logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | VSP ID %-4s  | PDAlabel %-15s | dzidx %d\n", 
-                           _aqualink_data.aqbuttons[i].name, _aqualink_data.aqbuttons[i].label, vsp,
-                          _aqualink_data.aqbuttons[i].pda_label, _aqualink_data.aqbuttons[i].dz_idx  );
+      logMessage(LOG_NOTICE, "Config BTN %-13s = label %-15s | VSP ID %-4s  | PDAlabel %-15s | dzidx %d | habid %d\n",
+                 _aqualink_data.aqbuttons[i].name,
+                 _aqualink_data.aqbuttons[i].label,
+                 vsp, _aqualink_data.aqbuttons[i].pda_label,
+                 _aqualink_data.aqbuttons[i].dz_idx,
+                 _aqualink_data.aqbuttons[i].hab_id);
     }
     //logMessage(LOG_NOTICE, "Button %d\n", i+1, _aqualink_data.aqbuttons[i].label , _aqualink_data.aqbuttons[i].dz_idx);
   }
@@ -1198,6 +1207,11 @@ void main_loop()
     exit(EXIT_FAILURE);
   }
 
+  if (!start_habridge_updater(&_config_parameters, &_aqualink_data)) {
+    logMessage(LOG_ERR, "Can not start start_habridge_updater\n");
+    exit(EXIT_FAILURE);
+  }
+
   startPacketLogger(_config_parameters.debug_RSProtocol_packets, _config_parameters.read_pentair_packets);
 
   signal(SIGINT, intHandler);
@@ -1311,6 +1325,8 @@ void main_loop()
         {
           //broadcast_aqualinkstate(mgr.active_connections);
           changed = true;
+          // :TODO: may need to also update if read_all_devices == true
+          update_habridge_state(&_config_parameters, &_aqualink_data);
         }
         */
       }/* 
