@@ -55,7 +55,7 @@ MGFLAGS = -D MG_DISABLE_MD5 -D MG_DISABLE_HTTP_DIGEST_AUTH -D MG_DISABLE_MD5 -D 
 #SRCS = aqualinkd.c utils.c config.c aq_serial.c init_buttons.c aq_programmer.c net_services.c json_messages.c pda.c pda_menu.c \
 #       pda_aq_programmer.c devices_jandy.c onetouch.c onetouch_aq_programmer.c packetLogger.c devices_pentair.c color_lights.c mongoose.c
 
-SRCS = aqualinkd.c utils.c config.c aq_serial.c aq_panel.c aq_programmer.c net_services.c json_messages.c rs_msg_utils.c\
+SRCS = aqualinkd.c utils.c config.c aq_serial.c aq_panel.c aq_programmer.c net_services.c net_services_habridge.c json_messages.c rs_msg_utils.c\
        devices_jandy.c packetLogger.c devices_pentair.c color_lights.c serialadapter.c aq_timer.c aq_scheduler.c web_config.c mongoose.c 
 
 
@@ -175,7 +175,7 @@ $(PLAY): $(PL_OBJS) $(PL_EXOBJ)
 git: clean $(MAIN) $(SLOG)
 	./release/git_version.sh
 
-	
+
 # this is a suffix replacement rule for building .o's from .c's
 # it uses automatic variables $<: the name of the prerequisite of
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
