@@ -72,6 +72,7 @@ typedef struct aqualinkkey
 //#endif
   unsigned char code;
   int dz_idx;
+  int hab_id;
   uint8_t special_mask;
 } aqkey;
 
