@@ -96,7 +96,8 @@ void init_parameters (struct aqconfig * parms)
   parms->mqtt_server = DEFAULT_MQTT_SERVER;
   parms->mqtt_user = DEFAULT_MQTT_USER;
   parms->mqtt_passwd = DEFAULT_MQTT_PASSWD;
-
+  parms->habridge_server = NULL;
+  parms->habridge_user = NULL;
   parms->dzidx_air_temp = TEMP_UNKNOWN;
   parms->dzidx_pool_water_temp = TEMP_UNKNOWN;
   parms->dzidx_spa_water_temp = TEMP_UNKNOWN;
@@ -449,6 +450,12 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
   } else if (strncasecmp(param, "mqtt_passwd", 11) == 0) {
     _aqconfig_.mqtt_passwd = cleanalloc(value);
     rtn=true;
+  } else if (strncasecmp(param, "habridge_server", 15) == 0) {
+    _aqconfig_.habridge_server = cleanalloc(value);
+    rtn=true;
+  } else if (strncasecmp(param, "habridge_user", 13) == 0) {
+    _aqconfig_.habridge_user = cleanalloc(value);
+    rtn=true;
   } else if (strncasecmp(param, "air_temp_dzidx", 14) == 0) {
     _aqconfig_.dzidx_air_temp = strtoul(value, NULL, 10);
     rtn=true;
@@ -675,6 +682,9 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
         LOG(AQUA_LOG,LOG_ERR, "Config error, VSP Pumps limited to %d, ignoring %s'\n",MAX_PUMPS,param);
       }
       rtn=true;
+    } else if (strncasecmp(param + 9, "_habid", 6) == 0) {
+      aqdata->aqbuttons[num].hab_id =  strtoul(value, NULL, 10);
+      rtn=true;
     }
       /*
     } else if (strncasecmp(param + 9, "_pumpID", 7) == 0) {
@@ -892,6 +902,10 @@ bool writeCfg (struct aqualinkdata *aqdata)
   writeCharValue(fp, "mqtt_user", _aqconfig_.mqtt_user);
   writeCharValue(fp, "mqtt_passwd", _aqconfig_.mqtt_passwd);
 
+  fprintf(fp, "\n#** HA Bridge Configuration **\n");
+  writeCharValue(fp, "habridge_server", config_parameters->habridge_server);
+  writeCharValue(fp, "habridge_user", config_parameters->habridge_user);
+
   fprintf(fp, "\n#** General **\n");
   fprintf(fp, "convert_mqtt_temp_to_c = %s\n", bool2text(_aqconfig_.convert_mqtt_temp));
   fprintf(fp, "override_freeze_protect = %s\n", bool2text(_aqconfig_.override_freeze_protect));        
@@ -930,6 +944,8 @@ bool writeCfg (struct aqualinkdata *aqdata)
       fprintf(fp, "button_%.2d_dzidx = %d\n", i+1, aqdata->aqbuttons[i].dz_idx);
     if (aqdata->aqbuttons[i].pda_label != NULL)
       fprintf(fp, "button_%.2d_PDA_label = %s\n", i+1, aqdata->aqbuttons[i].pda_label);
+    if (aqdata->aqbuttons[i].hab_id > 0)
+      fprintf(fp, "button_%.2d_habid = %d\n", i+1, aqdata->aqbuttons[i].hab_id);
   }
   fclose(fp);
   remount_root_ro(fs);
