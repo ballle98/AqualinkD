@@ -1262,6 +1262,7 @@ int startup(char *self, char *cfgFile)
   LOG(AQUA_LOG,LOG_NOTICE, "Config idx spa thermostat  = %d\n", _aqconfig_.dzidx_spa_thermostat);
   */
   LOG(AQUA_LOG,LOG_NOTICE, "Config habridge_server   = %s\n", _aqconfig_.habridge_server);
+  LOG(AQUA_LOG,LOG_NOTICE, "Config habridge_user     = %s\n", _aqconfig_.habridge_user);
   LOG(AQUA_LOG,LOG_NOTICE, "Config deamonize         = %s\n", bool2text(_aqconfig_.deamonize));
   LOG(AQUA_LOG,LOG_NOTICE, "Config log_file          = %s\n", _aqconfig_.log_file);
   LOG(AQUA_LOG,LOG_NOTICE, "Config enable scheduler  = %s\n", bool2text(_aqconfig_.enable_scheduler));
