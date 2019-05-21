@@ -991,6 +991,7 @@ int main(int argc, char *argv[]) {
   */
 #endif // MG_DISABLE_MQTT
   logMessage(LOG_NOTICE, "Config habridge_server   = %s\n", _config_parameters.habridge_server);
+  logMessage(LOG_NOTICE, "Config habridge_user     = %s\n", _config_parameters.habridge_user);
   logMessage(LOG_NOTICE, "Config deamonize         = %s\n", bool2text(_config_parameters.deamonize));
   logMessage(LOG_NOTICE, "Config log_file          = %s\n", _config_parameters.log_file);
   logMessage(LOG_NOTICE, "Config light_pgm_mode    = %.2f\n", _config_parameters.light_programming_mode);
