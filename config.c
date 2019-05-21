@@ -63,6 +63,7 @@ void init_parameters (struct aqconfig * parms)
   parms->mqtt_user = DEFAULT_MQTT_USER;
   parms->mqtt_passwd = DEFAULT_MQTT_PASSWD;
   parms->habridge_server = NULL;
+  parms->habridge_user = NULL;
   parms->dzidx_air_temp = TEMP_UNKNOWN;
   parms->dzidx_pool_water_temp = TEMP_UNKNOWN;
   parms->dzidx_spa_water_temp = TEMP_UNKNOWN;
@@ -349,6 +350,9 @@ bool setConfigValue(struct aqconfig *config_parameters, struct aqualinkdata *aqd
   } else if (strncasecmp(param, "habridge_server", 15) == 0) {
     config_parameters->habridge_server = cleanalloc(value);
     rtn=true;
+  } else if (strncasecmp(param, "habridge_user", 13) == 0) {
+    config_parameters->habridge_user = cleanalloc(value);
+    rtn=true;
   } else if (strncasecmp(param, "air_temp_dzidx", 14) == 0) {
     config_parameters->dzidx_air_temp = strtoul(value, NULL, 10);
     rtn=true;
@@ -621,6 +625,7 @@ bool writeCfg (struct aqconfig *config_parameters, struct aqualinkdata *aqdata)
 
   fprintf(fp, "\n#** HA Bridge Configuration **\n");
   writeCharValue(fp, "habridge_server", config_parameters->habridge_server);
+  writeCharValue(fp, "habridge_user", config_parameters->habridge_user);
 
   fprintf(fp, "\n#** General **\n");
   fprintf(fp, "convert_mqtt_temp_to_c = %s\n", bool2text(config_parameters->convert_mqtt_temp));
