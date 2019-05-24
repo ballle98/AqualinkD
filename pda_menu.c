@@ -278,7 +278,7 @@ bool NEW_process_pda_menu_packet_NEW(unsigned char* packet, int length)
         _menu[packet[PKT_DATA]][AQ_MSGLEN] = '\0';
       }
       if (packet[PKT_DATA] == _hlightindex) {
-          logMessage(LOG_DEBUG, "process_pda_menu_packet: hlight changed from shift or up/down value\n");
+          logMessage(LOG_DEBUG, "process_pda_menu_packet: hlight changed from shift up/down or value change\n");
           pthread_cond_signal(&_pda_menu_hlight_change_cond);
       }
       if (getLogLevel() >= LOG_DEBUG){print_menu();}
