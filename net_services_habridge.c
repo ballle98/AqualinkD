@@ -51,6 +51,8 @@ void* habridge_updater_routine(void* data)
         }
       pthread_mutex_unlock(&_habridge_state_mutex);
 
+      logMessage (LOG_DEBUG, "habridge_updater_routine wake-up\n");
+
       for (i=0; i < TOTAL_BUTTONS; i++)
         {
           if ((aqdata->aqbuttons[i].hab_id) &&
