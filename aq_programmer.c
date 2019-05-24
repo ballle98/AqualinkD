@@ -1156,7 +1156,21 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
                        aq_data->aqbuttons[device].pda_label);
           } else {
               send_cmd(KEY_PDA_SELECT, aq_data);
+              clock_gettime(CLOCK_REALTIME, &max_wait);
+              max_wait.tv_sec += 2;
+              if (!wait_pda_m_hlightindex_update(&max_wait)) {
+                  logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait_pda_m_hlightindex_update\n",
+                             aq_data->aqbuttons[device].pda_label);
+              }
           }
+      } else { // not turning on heater
+          clock_gettime(CLOCK_REALTIME, &max_wait);
+          max_wait.tv_sec += 5; // worst case spa when pool is running
+          if (!wait_pda_m_hlightindex_update(&max_wait)) {
+              logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait_pda_m_hlightindex_update\n",
+                         aq_data->aqbuttons[device].pda_label);
+          }
+
       }
     } else {
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', not changing state, is same\n",aq_data->aqbuttons[device].pda_label,state);
