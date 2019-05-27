@@ -13,7 +13,7 @@ PIDFile=/run/aqualinkd.pid
 EnvironmentFile=/etc/default/aqualinkd
 ExecStart=/usr/local/bin/aqualinkd $OPTS
 ExecReload=/bin/kill -HUP $MAINPID
-#Restart=on-failure
+Restart=on-failure
 KillMode=process
 RestartSec=2
 
