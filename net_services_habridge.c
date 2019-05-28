@@ -58,12 +58,12 @@ void* habridge_updater_routine(void* data)
           if ((aqdata->aqbuttons[i].hab_id) &&
               (_last_habridge_ledstate[i] != aqdata->aqbuttons[i].led->state))
             {
-              const char *on_value = "false";
+              const char *on_value = "true"; // ON, FLASH, ENABLED
 
               _last_habridge_ledstate[i] = aqdata->aqbuttons[i].led->state;
-              if (aqdata->aqbuttons[i].led->state == ON)
+              if (aqdata->aqbuttons[i].led->state == OFF)
                 {
-                  on_value = "true";
+                  on_value = "false";
                 }
               snprintf(cmd_buff, sizeof(cmd_buff),
                        "curl -sS -X PUT -d '{\"on\": %s}' 'http://%s/api/%s/lights/%d/bridgeupdatestate' > /dev/null",
