@@ -47,7 +47,8 @@ bool loopover_devices(struct aqualinkdata *aq_data);
 bool find_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, int charlimit);
 bool select_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, bool waitForNextMenu);
 
-static pda_type _PDA_Type;
+//:TODO: Should this be part of struct aqualinkdata
+static pda_type _PDA_Type = AQUAPALM;
 
 /* 
 // Each RS message / call to this function is around 0.2 seconds apart
@@ -422,6 +423,12 @@ void *set_aqualink_PDA_init( void *ptr )
     snprintf(aq_data->version, (AQ_MSGLEN*2)-1, "%s %s",stripwhitespace(ptr1),stripwhitespace(ptr2));
 
     //printf("****** Version '%s' ********\n",aq_data->version);
+    logMessage(LOG_DEBUG, "PDA type=%d, version=%s\n", _PDA_Type, aq_data->version);
+    // don't wait for version menu to time out press back to get to home menu faster
+    send_cmd(KEY_PDA_BACK);
+  }
+  else {
+    logMessage(LOG_ERR, "PDA Init :- should be called when on FW VERSION menu.\n");
   }
 /* 
   // Get status of all devices
