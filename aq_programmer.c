@@ -166,7 +166,10 @@ unsigned char pop_aq_cmd(struct aqualinkdata *aq_data)
       pthread_mutex_lock(&_pgm_command_mutex);
       cmd = _pgm_command;
       _pgm_command = NUL;
-      LOG(PROG_LOG, LOG_DEBUG_SERIAL, "RS SEND cmd '0x%02hhx' (programming)\n", cmd);
+      if (cmd) {
+        LOG(PROG_LOG, LOG_DEBUG_SERIAL, "RS SEND cmd %s '0x%02hhx' (programming)\n",
+                   cmd_to_string(cmd), cmd);
+      }
       pthread_cond_signal(&_pgm_command_sent_cond);
       pthread_mutex_unlock(&_pgm_command_mutex);
     } else if (_pgm_command != NUL) {
@@ -2209,7 +2212,8 @@ bool send_cmd(unsigned char cmd)
 
   pthread_mutex_lock(&_pgm_command_mutex);
   _pgm_command = cmd;
-  LOG(PROG_LOG, LOG_INFO, "Queue send '0x%02hhx' to controller (programming)\n", _pgm_command);
+  LOG(PROG_LOG, LOG_INFO, "Queue send %s '0x%02hhx' to controller (programming)\n",
+             cmd_to_string(_pgm_command), _pgm_command);
   while (_pgm_command != NUL)
     {
       if ((pret = pthread_cond_timedwait(&_pgm_command_sent_cond,
