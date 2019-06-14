@@ -47,7 +47,8 @@ bool loopover_devices(struct aqualinkdata *aq_data);
 bool find_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, int charlimit);
 bool select_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, bool waitForNextMenu);
 
-static pda_type _PDA_Type;
+//:TODO: Should this be part of struct aqualinkdata
+static pda_type _PDA_Type = AQUAPALM;
 
 /* 
 // Each RS message / call to this function is around 0.2 seconds apart
