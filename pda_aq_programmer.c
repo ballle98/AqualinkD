@@ -37,7 +37,8 @@
 #include "timespec_subtract.h"
 
 bool waitForPDAMessageHighlight(struct aqualinkdata *aq_data, int highlighIndex, int numMessageReceived);
-bool waitForPDAMessageType(struct aqualinkdata *aq_data, unsigned char mtype, int numMessageReceived);
+static bool waitForPDAMessageType(struct aqualinkdata *aq_data, unsigned char mtype,
+                           unsigned long sec, unsigned long msec);
 bool waitForPDAMessageTypes(struct aqualinkdata *aq_data, unsigned char mtype1, unsigned char mtype2, int numMessageReceived);
 bool waitForPDAMessageTypesOrMenu(struct aqualinkdata *aq_data, unsigned char mtype1, unsigned char mtype2, int numMessageReceived, char *text, int line);
 bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu);
@@ -102,11 +103,8 @@ void pda_programming_thread_check(struct aqualinkdata *aq_data)
 
 bool wait_pda_selected_item(struct aqualinkdata *aq_data)
 {
-  int i=0;
-
-  while (pda_m_hlightindex() == -1 && i < 5){
-    waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,10);
-    i++;
+  while (pda_m_hlightindex() == -1){
+    waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,2,0);
   }
 
   if (pda_m_hlightindex() == -1)
@@ -116,7 +114,7 @@ bool wait_pda_selected_item(struct aqualinkdata *aq_data)
 }
 
 bool waitForPDAnextMenu(struct aqualinkdata *aq_data) {
-  waitForPDAMessageType(aq_data,CMD_PDA_CLEAR,10);
+  waitForPDAMessageType(aq_data,CMD_PDA_CLEAR,2,0);
   return waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,15);
 }
 
@@ -292,7 +290,7 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
       }
   } else if (pda_m_type() == PM_BUILDING_HOME) {
       logMessage(LOG_DEBUG, "goto_pda_menu building home menu\n");
-      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,15);
+      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,3,0);
   }
   
 
@@ -383,14 +381,14 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
           if (aq_data->single_device != true) {
             ret = select_pda_menu_item(aq_data, "SET TEMP", true);
           } else {
-              // Depending on control panel config, may get an extra menu asking to press any key
-              logMessage(LOG_DEBUG, "PDA in single device mode, \n");
-              ret = select_pda_menu_item(aq_data, "SET TEMP", false);
-              // We could press enter here, but I can't test it, so just wait for message to dissapear.
-              ret = waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,25);    
-              //waitForPDAMessageType(aq_data,CMD_PDA_CLEAR,10);
-              //waitForPDAMessageTypesOrMenu(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,20,"press ANY key",8);
-            }
+            // Depending on control panel config, may get an extra menu asking to press any key
+            logMessage(LOG_DEBUG, "PDA in single device mode, \n");
+            ret = select_pda_menu_item(aq_data, "SET TEMP", false);
+            // We could press enter here, but I can't test it, so just wait for message to dissapear.
+            ret = waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,25);
+            //waitForPDAMessageType(aq_data,CMD_PDA_CLEAR,2,0);
+            //waitForPDAMessageTypesOrMenu(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,20,"press ANY key",2,0);
+          }
         } else {
             send_cmd(KEY_PDA_BACK);
             ret = waitForPDAnextMenu(aq_data);
@@ -474,14 +472,14 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
           } else {
               send_cmd(KEY_PDA_SELECT);
 	      while (get_aq_cmd_length() > 0) { delay(500); }
-              if (!waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,20)) {
+              if (!waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,4,0)) {
                   logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",
                              aq_data->aqbuttons[device].pda_label);
               }
           }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,2)) {
+          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,0,500)) {
               logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",
                          aq_data->aqbuttons[device].pda_label);
           }
@@ -665,30 +663,49 @@ bool waitForPDAMessageHighlight(struct aqualinkdata *aq_data, int highlighIndex,
 }
 
 
-bool waitForPDAMessageType(struct aqualinkdata *aq_data, unsigned char mtype, int numMessageReceived)
+bool waitForPDAMessageType(struct aqualinkdata *aq_data, unsigned char mtype,
+                           unsigned long sec, unsigned long msec)
 {
-  logMessage(LOG_DEBUG, "waitForPDAMessageType  0x%02hhx\n",mtype);
-
   int i=0;
+  struct timespec max_wait;
+  int ret = 0;
+
+  logMessage(LOG_DEBUG, "waitForPDAMessageType 0x%02hhx, %lu.%03lu sec\n",
+             mtype, sec, msec);
+  if (msec > 999)
+    {
+      logMessage(LOG_ERR, "waitForPDAMessageType INVALID msec value %lu\n", msec);
+    }
+  clock_gettime(CLOCK_REALTIME, &max_wait);
+  max_wait.tv_sec += sec;
+  max_wait.tv_nsec += msec*1000000;
+  if (max_wait.tv_nsec > 999999999L)
+    {
+      max_wait.tv_nsec -= 1000000000L;
+      max_wait.tv_sec++;
+    }
   pthread_mutex_lock(&aq_data->active_thread.thread_mutex);
 
-  while( ++i <= numMessageReceived)
-  {
-    logMessage(LOG_DEBUG, "waitForPDAMessageType 0x%02hhx, last message type was 0x%02hhx (%d of %d)\n",mtype,aq_data->last_packet_type,i,numMessageReceived);
+  do {
+    i++;
+    logMessage(LOG_DEBUG, "waitForPDAMessageType 0x%02hhx, last message type was 0x%02hhx (%d)\n",
+               mtype,aq_data->last_packet_type,i);
 
-    if (aq_data->last_packet_type == mtype) break;
-
-    pthread_cond_wait(&aq_data->active_thread.thread_cond, &aq_data->active_thread.thread_mutex);
-  }
+    if ((ret = pthread_cond_timedwait(&aq_data->active_thread.thread_cond,
+                                      &aq_data->active_thread.thread_mutex, &max_wait)))
+        {
+           logMessage(LOG_ERR, "waitForPDAMessageType: did not receive 0x%02hhx %s\n",
+                      mtype, strerror(ret));
+           break;
+        }
+  } while(aq_data->last_packet_type != mtype);
 
   pthread_mutex_unlock(&aq_data->active_thread.thread_mutex);
-  
-  if (aq_data->last_packet_type != mtype) {
-    //logMessage(LOG_ERR, "Could not select MENU of Aqualink control panel\n");
-    logMessage(LOG_DEBUG, "waitForPDAMessageType: did not receive 0x%02hhx\n",mtype);
-    return false;
-  } else 
-    logMessage(LOG_DEBUG, "waitForPDAMessageType: received 0x%02hhx\n",mtype);
+  if (ret)
+    {
+      return false;
+    }
+  logMessage(LOG_DEBUG, "waitForPDAMessageType: received 0x%02hhx\n",mtype);
   
   return true;
 }
@@ -749,7 +766,7 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur
     while ( strncasecmp(pda_m_hlight(), select_label, strlen(select_label)) != 0 ) {
       send_cmd(KEY_PDA_DOWN);
       delay(500);  // Last message probably was CMD_PDA_HIGHLIGHT, so wait before checking.
-      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,2);
+      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,0,500);
       if (i > 10) {
         logMessage(LOG_ERR, "PDA numeric selector could not find string '%s'\n", select_label);
         return false;
