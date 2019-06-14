@@ -494,4 +494,5 @@ bool onetouch_mode();
 //void send_test_cmd(int fd, unsigned char destination, unsigned char b1, unsigned char b2, unsigned char b3);
 //void send_command(int fd, unsigned char destination, unsigned char b1, unsigned char b2, unsigned char b3);
 //void send_messaged(int fd, unsigned char destination, char *message);
+const char* cmd_to_string(const unsigned char cmd);
 #endif // AQ_SERIAL_H_
