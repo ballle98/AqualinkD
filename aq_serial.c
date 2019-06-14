@@ -916,39 +916,26 @@ int _get_packet(int fd, unsigned char* packet, bool rawlog)
 
 #endif
 
+const char* cmd_to_string(const unsigned char cmd)
+{
+  const char* ret = NULL;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  switch (cmd) {
+    case KEY_PDA_UP:
+      ret = "UP";
+      break;
+    case KEY_PDA_DOWN:
+      ret = "DOWN";
+      break;
+    case KEY_PDA_BACK:
+      ret = "BACK";
+      break;
+    case KEY_PDA_SELECT:
+      ret = "SELECT";
+      break;
+    default:
+      ret = "UNKNOWN";
+      break;
+  }
+  return ret;
+}
