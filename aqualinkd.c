@@ -1185,10 +1185,11 @@ void main_loop()
         }
 */
         // If we are not in PDA or Simulator mode, just sent ACK & any CMD, else caculate the ACK.
-        if (!_aqualink_data.simulate_panel && !_config_parameters.pda_mode)
+        if (!_aqualink_data.simulate_panel && !_config_parameters.pda_mode) {
           send_ack(rs_fd, pop_aq_cmd(&_aqualink_data));
-        else
+        } else {
           caculate_ack_packet(rs_fd, packet_buffer);
+        }
 
 /* MOVE PROCESSING TO AFTER ACK, long programming will fail otherwise (like set time) */
         // Process the packet. This includes deriving general status, and identifying
