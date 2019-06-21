@@ -160,10 +160,7 @@ bool find_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, int charli
       int j;
       for(j=0; j < 20; j++) {
         send_cmd(KEY_PDA_DOWN);
-        //delay(500);
-        //wait_for_empty_cmd_buffer();
         waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_MSG_LONG,2,0);
-        //waitForMessage(aq_data, NULL, 1);
         index = (charlimit == 0)?pda_find_m_index(menuText):pda_find_m_index_case(menuText, charlimit);
         if (index >= 0) {
           i=pda_m_hlightindex();
@@ -465,7 +462,6 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
     if (aq_data->aqbuttons[device].led->state != state) {
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', changing state\n",aq_data->aqbuttons[device].pda_label,state);
       send_cmd(KEY_PDA_SELECT);
-      // while (get_aq_cmd_length() > 0) { delay(500); }
       // If you are turning on a heater there will be a sub menu to set temp
       if ((state == ON) && ((device == POOL_HEAT_INDEX) || (device == SPA_HEAT_INDEX))) {
           if (! waitForPDAnextMenu(aq_data)) {
@@ -495,9 +491,8 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
   }
 
   cleanAndTerminateThread(threadCtrl);
-  
-  return NULL;
 
+  return NULL;
 }
 
 
@@ -752,8 +747,7 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur
     //while ( strncasecmp(pda_m_hlight(), select_label, 8) != 0 ) {
     while ( strncasecmp(pda_m_hlight(), select_label, strlen(select_label)) != 0 ) {
       send_cmd(KEY_PDA_DOWN);
-      delay(500);  // Last message probably was CMD_PDA_HIGHLIGHT, so wait before checking.
-      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,0,500);
+      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,1,0);
       if (i > 10) {
         logMessage(LOG_ERR, "PDA numeric selector could not find string '%s'\n", select_label);
         return false;
