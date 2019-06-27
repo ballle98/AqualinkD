@@ -1441,7 +1441,7 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer, emulation_type
 #endif
 #ifdef AQ_PDA
     case AQUAPDA:
-      if (_aqconfig_.pda_sleep_mode && pda_shouldSleep()) {
+      if (pda_shouldSleep()) {
         LOG(PDA_LOG,LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
         return;
       } else {
@@ -1582,7 +1582,7 @@ void main_loop()
 
 #ifdef AQ_PDA
   if (isPDA_PANEL) {
-    init_pda(&_aqualink_data);
+    init_pda(&_aqualink_data, &_aqconfig_);
     if (_aqconfig_.extended_device_id != 0x00)
     {
       LOG(AQUA_LOG,LOG_ERR, "Aqualink daemon can't use extended_device_id in PDA mode, ignoring value '0x%02hhx' from cfg\n",_aqconfig_.extended_device_id);
