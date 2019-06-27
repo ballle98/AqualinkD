@@ -1101,11 +1101,7 @@ void main_loop()
 
   if (_config_parameters.pda_mode == true)
   {
-    #ifdef BETA_PDA_AUTOLABEL
-      init_pda(&_aqualink_data, &_config_parameters);
-    #else
-      init_pda(&_aqualink_data);
-    #endif
+    init_pda(&_aqualink_data, &_config_parameters);
   }
 
   if (_config_parameters.device_id == 0x00) {
