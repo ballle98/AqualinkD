@@ -33,10 +33,12 @@
 #include "rs_msg_utils.h"
 
 // static struct aqualinkdata _aqualink_data;
-static struct aqualinkdata *_aqualink_data;
+static struct aqualinkdata *_aqualink_data = NULL;
+static struct aqconfig *_config_parameters = NULL;
 static unsigned char _last_packet_type;
 static unsigned long _pda_loop_cnt = 0;
 static bool _initWithRS = false;
+static bool _pda_first_probe_recvd = false;
 
 // Each RS message is around 0.25 seconds apart
 
@@ -45,16 +47,22 @@ static bool _initWithRS = false;
 
 
 
-void init_pda(struct aqualinkdata *aqdata)
+void init_pda(struct aqualinkdata *aqdata, struct aqconfig *aqconf)
 {
   _aqualink_data = aqdata;
+  _config_parameters = aqconf;
   //set_pda_mode(true);
 }
 
 
 bool pda_shouldSleep() {
   //LOG(PDA_LOG,LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
-  if (_pda_loop_cnt++ < PDA_WAKE_FOR) {
+  // If aqualinkd was restarted and a probe has not been received force a sleep
+  if (! _pda_first_probe_recvd) {
+    return true;
+  } else if (! _config_parameters->pda_sleep_mode) {
+    return false;
+  } else if (_pda_loop_cnt++ < PDA_WAKE_FOR) {
     return false;
   } else if (_pda_loop_cnt > PDA_WAKE_FOR + PDA_SLEEP_FOR) {
     _pda_loop_cnt = 0;
@@ -794,8 +802,12 @@ bool process_pda_packet(unsigned char *packet, int length)
 
   switch (packet[PKT_CMD])
   {
-    case CMD_ACK:
-      LOG(PDA_LOG,LOG_DEBUG, "RS Received ACK length %d.\n", length);
+
+  case CMD_PROBE:
+    _pda_first_probe_recvd = true;
+    break;
+  case CMD_ACK:
+    LOG(PDA_LOG,LOG_DEBUG, "RS Received ACK length %d.\n", length);
     break;
 
     case CMD_PDA_CLEAR:
