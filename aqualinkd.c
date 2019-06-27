@@ -929,60 +929,6 @@ void logPacket(unsigned char *packet_buffer, int packet_length)
 #define MAX_BLOCK_ACK 12
 #define MAX_BUSY_ACK  (50 + MAX_BLOCK_ACK)
 
-// :TODO: enable last active
-#if 0
-      bool bPDA_in_standby = false;
-      if ((_aqualink_data.active_thread.thread_id == 0) &&
-          ((packet_buffer[PKT_CMD] == CMD_STATUS) ||
-           (packet_buffer[PKT_CMD] == CMD_PROBE)))
-        {
-          struct timespec now;
-          struct timespec elapsed;
-          clock_gettime(CLOCK_REALTIME, &now);
-          timespec_subtract(&elapsed, &now, &(_aqualink_data.last_active_time));
-          if (elapsed.tv_sec <= 30)
-            {
-              bPDA_in_standby = true;
-              pda_m_clear ();
-            }
-          else
-            {
-              aq_programmer (AQ_PDA_DEVICE_STATUS, NULL,
-                             &_aqualink_data);
-            }
-        }
-      // Can only send command to status message on PDA.
-      if (_config_parameters.pda_mode == true
-          && packet_buffer[PKT_CMD] == CMD_STATUS)
-        {
-          if ((_aqualink_data.active_thread.thread_id == 0)
-              && bPDA_in_standby)
-            {
-              logMessage (LOG_DEBUG, "NO STATUS ACK\n");
-            }
-          else
-            {
-              send_ack (rs_fd, pop_aq_cmd (&_aqualink_data));
-            }
-        }
-      else if (_config_parameters.pda_mode == true
-          && packet_buffer[PKT_CMD] == CMD_PROBE)
-        {
-          if ((_aqualink_data.active_thread.thread_id == 0)
-              && bPDA_in_standby)
-            {
-              logMessage (LOG_DEBUG, "NO PROBE ACK\n");
-            }
-          else
-            {
-              send_ack (rs_fd, NUL);
-            }
-        }
-      else
-        {
-          send_ack(rs_fd, NUL);
-        }
-#endif
 
 void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer) {
   static int delayAckCnt = 0;
@@ -1125,11 +1071,7 @@ void main_loop()
 
   if (_config_parameters.pda_mode == true)
   {
-    #ifdef BETA_PDA_AUTOLABEL
-      init_pda(&_aqualink_data, &_config_parameters);
-    #else
-      init_pda(&_aqualink_data);
-    #endif
+    init_pda(&_aqualink_data, &_config_parameters);
   }
 
   if (_config_parameters.device_id == 0x00) {
