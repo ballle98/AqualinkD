@@ -625,8 +625,6 @@ void *set_aqualink_PDA_init( void *ptr )
     LOG(PDA_LOG,LOG_ERR, "PDA Init :- Error getting freeze setpoints\n");
   }
 
-  pda_reset_sleep();
-
   cleanAndTerminateThread(threadCtrl);
 
   // just stop compiler error, ptr is not valid as it's just been freed

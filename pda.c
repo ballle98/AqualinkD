@@ -31,6 +31,7 @@
 #include "packetLogger.h"
 #include "devices_jandy.h"
 #include "rs_msg_utils.h"
+#include "timespec_subtract.h"
 
 // This needs to be tested on a real panel.
 //#define NEW_UPDATE_METHOD
@@ -40,14 +41,10 @@
 static struct aqualinkdata *_aqualink_data = NULL;
 static struct aqconfig *_config_parameters = NULL;
 static unsigned char _last_packet_type;
-static unsigned long _pda_loop_cnt = 0;
 static bool _initWithRS = false;
 static bool _pda_first_probe_recvd = false;
 
-// Each RS message is around 0.25 seconds apart
-
-#define PDA_SLEEP_FOR 120 // 30 seconds
-#define PDA_WAKE_FOR 6 // ~1 seconds
+#define PDA_SLEEP_FOR 30 // 30 seconds
 
 
 
@@ -61,15 +58,12 @@ void init_pda(struct aqualinkdata *aqdata, struct aqconfig *aqconf)
 
 bool pda_shouldSleep() {
   //LOG(PDA_LOG,LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
+  struct timespec now;
+  struct timespec elapsed;
   // If aqualinkd was restarted and a probe has not been received force a sleep
   if (! _pda_first_probe_recvd) {
     return true;
   } else if (! _config_parameters->pda_sleep_mode) {
-    return false;
-  } else if (_pda_loop_cnt++ < PDA_WAKE_FOR) {
-    return false;
-  } else if (_pda_loop_cnt > PDA_WAKE_FOR + PDA_SLEEP_FOR) {
-    _pda_loop_cnt = 0;
     return false;
   }
 
@@ -78,8 +72,6 @@ bool pda_shouldSleep() {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as thread %d,%p is active\n",
                _aqualink_data->active_thread.ptype,
                _aqualink_data->active_thread.thread_id);
-
-    _pda_loop_cnt = 0;
     return false;
   }
 
@@ -88,7 +80,13 @@ bool pda_shouldSleep() {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
     return false;
   }
-  
+
+  clock_gettime(CLOCK_REALTIME, &now);
+  timespec_subtract(&elapsed, &now, &(_aqualink_data->last_active_time));
+  if (elapsed.tv_sec > PDA_SLEEP_FOR) {
+    return false;
+  }
+
   return true;
 }
 
@@ -105,15 +103,6 @@ bool pda_shouldSleep() {
   return true;
 }
 */
-
-void pda_wake() {
-  pda_reset_sleep();
-  // Add and specic code to run when wake is called. 
-}
-
-void pda_reset_sleep() {
-  _pda_loop_cnt = 0;
-}
 
 unsigned char get_last_pda_packet_type()
 {
