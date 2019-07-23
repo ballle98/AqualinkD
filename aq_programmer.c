@@ -227,7 +227,6 @@ void aq_programmer(program_type type, char *args, struct aqualinkdata *aq_data)
   struct programmingThreadCtrl *programmingthread = malloc(sizeof(struct programmingThreadCtrl));
   
   if (pda_mode() == true) {
-    pda_reset_sleep();
     if (type != AQ_PDA_INIT && 
         type != AQ_PDA_WAKE_INIT &&
         type != AQ_PDA_DEVICE_STATUS && 

@@ -964,8 +964,9 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer) {
     // if PDA mode, should we sleep? if not Can only send command to status message on PDA.
   if (_config_parameters.pda_mode == true) {
       //pda_programming_thread_check(&_aqualink_data);
-      if (_config_parameters.pda_sleep_mode && pda_shouldSleep()) {
+      if (pda_shouldSleep()) {
         logMessage(LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
+        pda_m_clear();
         return;
       } else if (packet_buffer[PKT_CMD] != CMD_STATUS)
         send_ack(rs_fd, NUL);
@@ -1074,7 +1075,7 @@ void main_loop()
   if (_config_parameters.force_swg == true)
      _aqualink_data.swg_percent = 0;
 
-  clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
+  memset(&_aqualink_data.last_active_time, 0, sizeof(struct timespec));
 
   pthread_mutex_init(&_aqualink_data.mutex, NULL);
   pthread_cond_init(&_aqualink_data.thread_finished_cond, NULL);
@@ -1172,30 +1173,20 @@ void main_loop()
 
         //debugPacketPrint(0x00, packet_buffer, packet_length);
         //unsigned char ID, unsigned char *packet_buffer, int packet_length)
-/* 
+
         // Process the packet. This includes deriving general status, and identifying
         // warnings and errors.  If something changed, notify any listeners
         if (process_packet(packet_buffer, packet_length) != false)
         {
-          broadcast_aqualinkstate(mgr.active_connections);
+          changed = true;
+          // :TODO: may need to also update if read_all_devices == true
+          update_habridge_state(&_config_parameters, &_aqualink_data);
         }
-*/
         // If we are not in PDA or Simulator mode, just sent ACK & any CMD, else caculate the ACK.
         if (!_aqualink_data.simulate_panel && !_config_parameters.pda_mode) {
           send_ack(rs_fd, pop_aq_cmd(&_aqualink_data));
         } else {
           caculate_ack_packet(rs_fd, packet_buffer);
-        }
-
-/* MOVE PROCESSING TO AFTER ACK, long programming will fail otherwise (like set time) */
-        // Process the packet. This includes deriving general status, and identifying
-        // warnings and errors.  If something changed, notify any listeners
-        if (process_packet(packet_buffer, packet_length) != false)
-        {
-          //broadcast_aqualinkstate(mgr.active_connections);
-          changed = true;
-          // :TODO: may need to also update if read_all_devices == true
-          update_habridge_state(&_config_parameters, &_aqualink_data);
         }
 
       }/* 
@@ -1286,6 +1277,7 @@ void main_loop()
 
       if (changed)
         broadcast_aqualinkstate(mgr.active_connections);
+
     }
     mg_mgr_poll(&mgr, 0);
 
