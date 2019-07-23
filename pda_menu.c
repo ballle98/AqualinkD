@@ -195,8 +195,7 @@ bool process_pda_menu_packet(unsigned char* packet, int length)
 
   switch (packet[PKT_CMD]) {
     case CMD_PDA_CLEAR:
-      _hlightindex = -1;
-      memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
+      rtn = pda_m_clear();
     break;
     case CMD_MSG_LONG:
       index = packet[PKT_DATA] & 0xF;
@@ -328,3 +327,13 @@ bool NEW_process_pda_menu_packet_NEW(unsigned char* packet, int length)
   return rtn;
 }
 #endif
+
+/*
+clear the menu
+*/
+bool pda_m_clear()
+{
+    _hlightindex = -1;
+    memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
+        return true;
+}

@@ -603,7 +603,6 @@ void aq_programmer(program_type r_type, char *args, struct aqualinkdata *aq_data
 #ifdef AQ_PDA
   // Check we are doing something valid request
   if (isPDA_PANEL) {
-    pda_reset_sleep();
     if (type != AQ_PDA_INIT && 
         type != AQ_PDA_WAKE_INIT &&
         type != AQ_PDA_DEVICE_STATUS && 
