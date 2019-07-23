@@ -793,10 +793,6 @@ void action_websocket_request(struct mg_connection *nc, struct websocket_message
   char buffer[50];
   struct JSONwebrequest request;
   
-  // Any websocket request means UI is active, so don't let AqualinkD go to sleep if in PDA mode
-  if (pda_mode())
-    pda_reset_sleep();
-  
   strncpy(buffer, (char *)wm->data, wm->size);
   buffer[wm->size] = '\0';
   // logMessage (LOG_DEBUG, "buffer '%s'\n", buffer);
@@ -1093,6 +1089,11 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
     if (is_websocket(nc)) {
       _aqualink_data->open_websockets--;
       logMessage(LOG_DEBUG, "-- Websocket left\n");
+      if ((_aqualink_data->active_thread.thread_id == 0) &&
+          (_aqualink_data->open_websockets == 0)) {
+          // update last active time if no threads are active for should sleep
+          clock_gettime(CLOCK_REALTIME, &_aqualink_data->last_active_time);
+      }
     } else if (is_mqtt(nc)) {
       logMessage(LOG_WARNING, "MQTT Connection closed\n");
       _mqtt_exit_flag = true;

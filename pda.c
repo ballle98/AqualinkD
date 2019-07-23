@@ -27,21 +27,17 @@
 #include "pda.h"
 #include "pda_menu.h"
 #include "utils.h"
-
+#include "timespec_subtract.h"
 
 
 // static struct aqualinkdata _aqualink_data;
 static struct aqualinkdata *_aqualink_data = NULL;
 static struct aqconfig *_config_parameters = NULL;
 static unsigned char _last_packet_type;
-static unsigned long _pda_loop_cnt = 0;
 static bool _initWithRS = false;
 static bool _pda_first_probe_recvd = false;
 
-// Each RS message is around 0.25 seconds apart
-
-#define PDA_SLEEP_FOR 120 // 30 seconds
-#define PDA_WAKE_FOR 6 // ~1 seconds
+#define PDA_SLEEP_FOR 30 // 30 seconds
 
 void init_pda(struct aqualinkdata *aqdata, struct aqconfig *aqconf)
 {
@@ -51,73 +47,14 @@ void init_pda(struct aqualinkdata *aqdata, struct aqconfig *aqconf)
 }
 
 
-
-// :TODO: enable last active
-#if 0
-      bool bPDA_in_standby = false;
-      if ((_aqualink_data.active_thread.thread_id == 0)
-          ((packet_buffer[PKT_CMD] == CMD_STATUS) ||
-           (packet_buffer[PKT_CMD] == CMD_PROBE)))
-        {
-          struct timespec now;
-          struct timespec elapsed;
-          clock_gettime(CLOCK_REALTIME, &now);
-          timespec_subtract(&elapsed, &now, &(_aqualink_data.last_active_time));
-          if (elapsed.tv_sec <= 30)
-            {
-              bPDA_in_standby = true;
-              pda_m_clear ();
-            }
-          else
-            {
-              aq_programmer (AQ_PDA_DEVICE_STATUS, NULL,
-                             &_aqualink_data);
-            }
-        }
-      // Can only send command to status message on PDA.
-      if (_config_parameters.pda_mode == true
-          && packet_buffer[PKT_CMD] == CMD_STATUS)
-        {
-          if ((_aqualink_data.active_thread.thread_id == 0)
-              && bPDA_in_standby)
-            {
-              logMessage (LOG_DEBUG, "NO STATUS ACK\n");
-            }
-          else
-            {
-              send_ack (rs_fd, pop_aq_cmd (&_aqualink_data));
-            }
-        }
-      else if (_config_parameters.pda_mode == true
-          && packet_buffer[PKT_CMD] == CMD_PROBE)
-        {
-          if ((_aqualink_data.active_thread.thread_id == 0)
-              && bPDA_in_standby)
-            {
-              logMessage (LOG_DEBUG, "NO PROBE ACK\n");
-            }
-          else
-            {
-              send_ack (rs_fd, NUL);
-            }
-        }
-      else
-        {
-          send_ack(rs_fd, NUL);
-        }
-#endif
-
 bool pda_shouldSleep() {
-  //logMessage(LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
+  struct timespec now;
+  struct timespec elapsed;
+
   // If aqualinkd was restarted and a probe has not been received force a sleep
   if (! _pda_first_probe_recvd) {
     return true;
   } else if (! _config_parameters->pda_sleep_mode) {
-    return false;
-  } else if (_pda_loop_cnt++ < PDA_WAKE_FOR) {
-    return false;
-  } else if (_pda_loop_cnt > PDA_WAKE_FOR + PDA_SLEEP_FOR) {
-    _pda_loop_cnt = 0;
     return false;
   }
 
@@ -126,8 +63,6 @@ bool pda_shouldSleep() {
     logMessage(LOG_DEBUG, "PDA can't sleep as thread %d,%p is active",
                _aqualink_data->active_thread.ptype,
                _aqualink_data->active_thread.thread_id);
-
-    _pda_loop_cnt = 0;
     return false;
   }
 
@@ -136,31 +71,14 @@ bool pda_shouldSleep() {
     logMessage(LOG_DEBUG, "PDA can't sleep as websocket is active");
     return false;
   }
-  
-  return true;
-}
 
-/*
-bool pda_shouldSleep() {
-  //logMessage(LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
-  if (_pda_loop_cnt++ < PDA_LOOP_COUNT) {
-    return false;
-  } else if (_pda_loop_cnt > PDA_LOOP_COUNT*2) {
-    _pda_loop_cnt = 0;
+  clock_gettime(CLOCK_REALTIME, &now);
+  timespec_subtract(&elapsed, &now, &(_aqualink_data->last_active_time));
+  if (elapsed.tv_sec > PDA_SLEEP_FOR) {
     return false;
   }
 
   return true;
-}
-*/
-
-void pda_wake() {
-  pda_reset_sleep();
-  // Add and specic code to run when wake is called. 
-}
-
-void pda_reset_sleep() {
-  _pda_loop_cnt = 0;
 }
 
 unsigned char get_last_pda_packet_type()

@@ -528,8 +528,6 @@ void *set_aqualink_PDA_init( void *ptr )
     logMessage(LOG_ERR, "PDA Init :- Error getting freeze setpoints\n");
   }
 
-  pda_reset_sleep();
-
   cleanAndTerminateThread(threadCtrl);
 
   return NULL;
