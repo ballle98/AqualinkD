@@ -213,11 +213,7 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
 
   switch (packet[PKT_CMD]) {
     case CMD_PDA_CLEAR:
-      _hlightindex = -1;
-      _hlightcharindexstart = -1;
-      _hlightcharindexstop = -1;
-      memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
-      printed_page = false;
+      rtn = pda_m_clear();
     break;
     case CMD_STATUS:
       if ( printed_page == false && (getLogLevel(PDA_LOG) >= LOG_DEBUG)){
@@ -381,3 +377,15 @@ bool NEW_process_pda_menu_packet_NEW(unsigned char* packet, int length)
   return rtn;
 }
 #endif
+
+/*
+clear the menu
+*/
+bool pda_m_clear()
+{
+  _hlightindex = -1;
+  _hlightcharindexstart = -1;
+  _hlightcharindexstop = -1;
+  memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
+  return true;
+}
