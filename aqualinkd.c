@@ -1457,6 +1457,7 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer, emulation_type
     case AQUAPDA:
       if (pda_shouldSleep()) {
         LOG(PDA_LOG,LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
+        pda_m_clear();
         return;
       } else {
         send_extended_ack(rs_fd, ACK_PDA, pop_aq_cmd(&_aqualink_data));

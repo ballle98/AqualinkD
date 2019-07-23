@@ -78,5 +78,6 @@ int pda_find_m_index_case(char *text, int limit);
 int pda_find_m_index_loose(char *text);
 char *pda_m_hlightchars(int *len);
 //int pda_find_m_index_swcase(char *text, int limit);
+bool pda_m_clear();
 
 #endif
