@@ -1083,8 +1083,9 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer) {
     // if PDA mode, should we sleep? if not Can only send command to status message on PDA.
   if (_config_parameters.pda_mode == true) {
       //pda_programming_thread_check(&_aqualink_data);
-      if (_config_parameters.pda_sleep_mode && pda_shouldSleep()) {
+      if (pda_shouldSleep()) {
         logMessage(LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
+        pda_m_clear();
         return;
       //} else if (packet_buffer[PKT_CMD] != CMD_STATUS)  // Moved logic to pop_aq_cmd()
       //  send_extended_ack(rs_fd, ACK_PDA, NUL);
@@ -1196,7 +1197,7 @@ void main_loop()
      _aqualink_data.swg_ppm = 0;
   }
 
-  clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
+  memset(&_aqualink_data.last_active_time, 0, sizeof(struct timespec));
 
   pthread_mutex_init(&_aqualink_data.mutex, NULL);
   pthread_cond_init(&_aqualink_data.thread_finished_cond, NULL);
@@ -1303,6 +1304,8 @@ void main_loop()
         {
           //broadcast_aqualinkstate(mgr.active_connections);
           changed = true;
+          // :TODO: may need to also update if read_all_devices == true
+          update_habridge_state(&_config_parameters, &_aqualink_data);
         }
         
         //_aqualink_data.last_packet_type = packet_buffer[PKT_CMD];
@@ -1385,6 +1388,7 @@ void main_loop()
 
       if (changed)
         broadcast_aqualinkstate(mgr.active_connections);
+
     }
     mg_mgr_poll(&mgr, 0);
 

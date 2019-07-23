@@ -600,8 +600,9 @@ void *set_aqualink_PDA_init( void *ptr )
     logMessage(LOG_ERR, "PDA Init :- Error getting freeze setpoints\n");
   }
 
-  pda_reset_sleep();
-
+  // shift line test
+  // goto_pda_menu(aq_data,PM_SYSTEM_SETUP);
+  // select_pda_menu_item(aq_data, "SERVICE INFO", true);
   cleanAndTerminateThread(threadCtrl);
 
   return NULL;
