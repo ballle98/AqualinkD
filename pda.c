@@ -906,12 +906,10 @@ bool process_pda_packet(unsigned char *packet, int length)
           LOG(PDA_LOG,LOG_DEBUG, "**** PDA INIT ****\n");
         //aq_programmer(AQ_PDA_INIT, NULL, _aqualink_data);
           queueGetProgramData(AQUAPDA, _aqualink_data);
-          delay(50);  // Make sure this one runs first.
 #ifdef BETA_PDA_AUTOLABEL
           if (_aqconfig_->use_panel_aux_labels)
              aq_programmer(AQ_GET_AUX_LABELS, NULL, _aqualink_data);
 #endif
-          aq_programmer(AQ_PDA_WAKE_INIT, NULL, _aqualink_data);
         } else {
           LOG(PDA_LOG,LOG_DEBUG, "**** PDA WAKE INIT ****\n");
           aq_programmer(AQ_PDA_WAKE_INIT, NULL, _aqualink_data);
