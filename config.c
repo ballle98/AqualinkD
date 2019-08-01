@@ -116,6 +116,7 @@ void init_parameters (struct aqconfig * parms)
   parms->pda_sleep_mode = false;
 #endif
   //parms->onetouch_mode = false;
+  parms->pda_sleep_with_websock = true;
   parms->convert_mqtt_temp = true;
   parms->convert_dz_temp = true;
   parms->report_zero_pool_temp = false;
@@ -502,8 +503,11 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
     //set_pda_mode(_aqconfig_.pda_mode);
     _tmpPanel->rs = !text2bool(value);
     rtn=true;
-  } else if (strncasecmp(param, "pda_sleep_mode", 8) == 0) {
+  } else if (strncasecmp(param, "pda_sleep_mode", 14) == 0) {
     _aqconfig_.pda_sleep_mode = text2bool(value);
+    rtn=true;
+  } else if (strncasecmp(param, "pda_sleep_with_websock", 22) == 0) {
+    _aqconfig_.pda_sleep_with_websock = text2bool(value);
     rtn=true;
 #endif
   } else if (strncasecmp(param, "convert_mqtt_temp_to_c", 22) == 0) {
