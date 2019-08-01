@@ -120,10 +120,11 @@ bool wait_pda_selected_item(struct aqualinkdata *aq_data)
     i++;
   }
 
-  if (pda_m_hlightindex() == -1)
+  if (pda_m_hlightindex() == -1) {
     return false;
-  else
-   return true;
+  } else {
+    return true;
+  }
 }
 
 bool waitForPDAnextMenu(struct aqualinkdata *aq_data) {
@@ -517,7 +518,6 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
                        aq_data->aqbuttons[device].label);
           } else {
               send_cmd(KEY_PDA_SELECT);
-	      while (get_aq_cmd_length() > 0) { delay(500); }
               if (!waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,5,0)) {
                   LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",
                              aq_data->aqbuttons[device].label);
@@ -525,12 +525,11 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
           }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,0,500)) {
+          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,3,0)) {
               LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",
                          aq_data->aqbuttons[device].label);
           }
       }
-      
     } else {
       LOG(PDA_LOG,LOG_INFO, "PDA Device On/Off, found device '%s', not changing state, is same\n",aq_data->aqbuttons[device].label,state);
     }
@@ -816,7 +815,6 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int cur_
   } else {
     LOG(PDA_LOG,LOG_INFO, "PDA %s value : already at %d\n", select_label, val);
   }
-
   send_cmd(KEY_PDA_SELECT);
   LOG(PDA_LOG,LOG_DEBUG, "PDA %s value : set to %d\n", select_label, val);
   
