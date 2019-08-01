@@ -1509,6 +1509,7 @@ void main_loop()
     _aqualink_data.swg_percent = 0;
     _aqualink_data.swg_ppm = 0;
   }
+  memset(&_aqualink_data.last_active_time, 0, sizeof(struct timespec));
 
   signal(SIGINT, intHandler);
   signal(SIGTERM, intHandler);
@@ -1517,8 +1518,6 @@ void main_loop()
 
   pthread_mutex_init(&_aqualink_data.mutex, NULL);
   pthread_cond_init(&_aqualink_data.thread_finished_cond, NULL);
-
-  clock_gettime(CLOCK_REALTIME, &_aqualink_data.last_active_time);
 
   if (!start_net_services(&_aqualink_data))
   {
