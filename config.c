@@ -78,6 +78,7 @@ void init_parameters (struct aqconfig * parms)
   parms->log_file = '\0';
   parms->pda_mode = false;
   parms->pda_sleep_mode = false;
+  parms->pda_sleep_with_websock = true;
   parms->convert_mqtt_temp = true;
   parms->convert_dz_temp = true;
   parms->report_zero_pool_temp = false;
@@ -398,9 +399,11 @@ bool setConfigValue(struct aqconfig *config_parameters, struct aqualinkdata *aqd
     set_pda_mode(config_parameters->pda_mode);
     //config_parameters->use_PDA_auxiliary = false;
     rtn=true;
-  } else if (strncasecmp(param, "pda_sleep_mode", 8) == 0) {
+  } else if (strncasecmp(param, "pda_sleep_mode", 14) == 0) {
     config_parameters->pda_sleep_mode = text2bool(value);
-    //set_pda_mode(config_parameters->pda_mode);
+    rtn=true;
+  } else if (strncasecmp(param, "pda_sleep_with_websock", 22) == 0) {
+    config_parameters->pda_sleep_with_websock = text2bool(value);
     rtn=true;
   } else if (strncasecmp(param, "convert_mqtt_temp_to_c", 22) == 0) {
     config_parameters->convert_mqtt_temp = text2bool(value);
