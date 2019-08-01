@@ -78,7 +78,8 @@ bool pda_shouldSleep() {
   }
 
   // Last see if there are any open websockets. (don't sleep if the web UI is open)
-  if ( _aqualink_data->open_websockets > 0 ) {
+  if ((! _config_parameters->pda_sleep_with_websock) &&
+      ( _aqualink_data->open_websockets > 0 )) {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
     return false;
   }
@@ -936,7 +937,7 @@ bool process_pda_packet(unsigned char *packet, int length)
           if (_aqconfig_->use_panel_aux_labels)
              aq_programmer(AQ_GET_AUX_LABELS, NULL, _aqualink_data);
 #endif
-        } else {
+        } else if (_aqualink_data->active_thread.thread_id == NULL) {
           LOG(PDA_LOG,LOG_DEBUG, "**** PDA WAKE INIT ****\n");
           aq_programmer(AQ_PDA_WAKE_INIT, NULL, _aqualink_data);
         }
