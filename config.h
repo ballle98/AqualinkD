@@ -56,6 +56,7 @@ struct aqconfig
   bool override_freeze_protect;
   bool pda_mode;
   bool pda_sleep_mode;
+  bool pda_sleep_with_websock;
   bool convert_mqtt_temp;
   bool convert_dz_temp;
   //bool flash_mqtt_buttons;
