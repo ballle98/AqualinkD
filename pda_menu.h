@@ -85,8 +85,5 @@ int pda_find_m_index_case(char *text, int limit);
 //int pda_find_m_index_swcase(char *text, int limit);
 bool pda_m_clear();
 bool update_pda_menu_type();
-bool wait_pda_m_hlightindex_update(struct timespec *max_wait);
-bool wait_pda_m_hlightindex_change(struct timespec *max_wait);
-int wait_pda_m_hlightindex(struct timespec *max_wait);
 
 #endif

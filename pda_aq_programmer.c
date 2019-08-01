@@ -103,14 +103,18 @@ void pda_programming_thread_check(struct aqualinkdata *aq_data)
 
 bool wait_pda_selected_item(struct aqualinkdata *aq_data)
 {
-  while (pda_m_hlightindex() == -1){
+  int i=0;
+
+  while (pda_m_hlightindex() == -1 && i < 5){
     waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,2,0);
+    i++;
   }
 
-  if (pda_m_hlightindex() == -1)
+  if (pda_m_hlightindex() == -1) {
     return false;
-  else
-   return true;
+  } else {
+    return true;
+  }
 }
 
 bool waitForPDAnextMenu(struct aqualinkdata *aq_data) {
@@ -439,6 +443,25 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
     if (aq_data->aqbuttons[device].led->state != state) {
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', changing state\n",aq_data->aqbuttons[device].pda_label,state);
       send_cmd(KEY_PDA_SELECT);
+      // If you are turning on a heater there will be a sub menu to set temp
+      if ((state == ON) && ((device == POOL_HEAT_INDEX) || (device == SPA_HEAT_INDEX))) {
+          if (! waitForPDAnextMenu(aq_data)) {
+            logMessage(LOG_ERR, "PDA Device On/Off: %s on - waitForPDAnextMenu\n",
+                       aq_data->aqbuttons[device].pda_label);
+          } else {
+              send_cmd(KEY_PDA_SELECT);
+              if (!waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,5,0)) {
+                  logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",
+                             aq_data->aqbuttons[device].pda_label);
+              }
+          }
+      } else { // not turning on heater wait for line update
+          // worst case spa when pool is running
+          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,3,0)) {
+              logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",
+                         aq_data->aqbuttons[device].pda_label);
+          }
+      }
     } else {
       logMessage(LOG_INFO, "PDA Device On/Off, found device '%s', not changing state, is same\n",aq_data->aqbuttons[device].pda_label,state);
     }
@@ -755,11 +778,16 @@ bool waitForPDAMessageTypes(struct aqualinkdata *aq_data, unsigned char mtype1,
 bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur_val, char *select_label, int step) {
   int i=0;
 
-  // Should probably change below to call find_pda_menu_item(), rather than doing it here
+  // :TODO: Should probably change below to call find_pda_menu_item(), rather than doing it here
   // If we lease this, need to limit on the number of loops
   while ( strncasecmp(pda_m_hlight(), select_label, 8) != 0 ) {
     send_cmd(KEY_PDA_DOWN);
     waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,1,0);
+  }
+
+  if (val == *cur_val) {
+      logMessage(LOG_INFO, "PDA %s value : already at %d\n", select_label, val);
+      return true;
   }
 
   send_cmd(KEY_PDA_SELECT);
@@ -774,13 +802,9 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur
     for (i = *cur_val; i < val; i=i+step) {
       send_cmd(KEY_PDA_UP);
     }
-  } else {
-    logMessage(LOG_INFO, "PDA %s value : already at %d\n", select_label, val);
-    send_cmd(KEY_PDA_BACK);
-    return true;
   }
-
   send_cmd(KEY_PDA_SELECT);
+
   logMessage(LOG_DEBUG, "PDA %s value : set to %d\n", select_label, *cur_val);
   
   return true;

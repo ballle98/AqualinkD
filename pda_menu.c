@@ -52,50 +52,6 @@ int pda_m_hlightindex()
   return _hlightindex;
 }
 
-bool wait_pda_m_hlightindex_update(struct timespec *max_wait)
-{
-  int ret = 0;
-  pthread_mutex_lock(&_pda_menu_mutex);
-  if ((ret = pthread_cond_timedwait(&_pda_menu_hlight_change_cond,
-                                    &_pda_menu_mutex, max_wait)))
-    {
-      logMessage (LOG_ERR, "wait_pda_m_hlightindex_update err %s\n",
-                  strerror(ret));
-    }
-  pthread_mutex_unlock(&_pda_menu_mutex);
-
-  return ((ret == 0));
-}
-
-bool wait_pda_m_hlightindex_change(struct timespec *max_wait)
-{
-  int ret = 0;
-  pthread_mutex_lock(&_pda_menu_mutex);
-  int old_hlightindex  = _hlightindex;
-  while (_hlightindex == old_hlightindex)
-    {
-      if ((ret = pthread_cond_timedwait(&_pda_menu_hlight_change_cond,
-                                        &_pda_menu_mutex, max_wait)))
-        {
-          logMessage (LOG_ERR, "wait_pda_m_hlightindex_change err %s\n",
-                      strerror(ret));
-          break;
-        }
-    }
-  pthread_mutex_unlock(&_pda_menu_mutex);
-
-  return ((_hlightindex != old_hlightindex));
-}
-
-int wait_pda_m_hlightindex(struct timespec *max_wait)
-{
-  if (_hlightindex == -1)
-    {
-      wait_pda_m_hlightindex_change(max_wait);
-    }
-  return _hlightindex;
-}
-
 char *pda_m_hlight()
 {
   return pda_m_line(_hlightindex);
