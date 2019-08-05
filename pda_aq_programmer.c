@@ -291,7 +291,7 @@ bool _select_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, bool wa
   return false;
 }
 
-// for reference see H0572300 - AquaLink PDA I/O Manual
+// PDA PS8 reference see H0572300 - AquaLink PDA I/O Manual
 // https://www.jandy.com/-/media/zodiac/global/downloads/h/h0572300.pdf
 // and H0574200 - AquaPalm Wireless Handheld Remote Installation and Operation Manual
 // https://www.jandy.com/-/media/zodiac/global/downloads/h/h0574200.pdf
