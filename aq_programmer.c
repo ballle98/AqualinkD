@@ -59,7 +59,6 @@ bool waitForButtonState(struct aqualinkdata *aq_data, aqkey* button, aqledstate 
 bool waitForEitherMessage(struct aqualinkdata *aq_data, char* message1, char* message2, int numMessageReceived);
 
 bool push_aq_cmd(unsigned char cmd);
-bool wait_pda_selected_item();
 
 #define MAX_STACK 20
 int _stack_place = 0;
@@ -238,7 +237,8 @@ void aq_programmer(program_type type, char *args, struct aqualinkdata *aq_data)
 #ifdef BETA_PDA_AUTOLABEL
         type != AQ_GET_AUX_LABELS &&
 #endif
-        type != AQ_GET_POOL_SPA_HEATER_TEMPS ) {
+        type != AQ_GET_POOL_SPA_HEATER_TEMPS &&
+        type != AQ_SET_FRZ_PROTECTION_TEMP) {
       logMessage(LOG_ERR, "Selected Programming mode '%d' not supported with PDA mode control panel\n",type);
       return;
     } 
@@ -930,6 +930,12 @@ void *set_aqualink_freeze_heater_temps( void *ptr )
   val = setpoint_check(FREEZE_SETPOINT, val, aq_data);
 
   logMessage(LOG_DEBUG, "Setting sfreeze protection to %d\n", val);
+
+  if (pda_mode() == true) {
+    set_PDA_aqualink_freezeprotect_setpoint(aq_data, val);
+    cleanAndTerminateThread(threadCtrl);
+    return ptr;
+  }
 
   //setAqualinkTemp(aq_data, "SYSTEM SETUP", "FRZ PROTECT", "TEMP SETTING", "FRZ", val);
   if ( select_menu_item(aq_data, "SYSTEM SETUP") != true ) {
