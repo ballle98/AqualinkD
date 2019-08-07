@@ -131,7 +131,6 @@ void displayLastSystemError (const char *on_what)
   if (_daemonise == TRUE)
   {
     logMessage (LOG_ERR, "%d : %s", errno, on_what);
-    closelog ();
   }
 }
 
@@ -329,7 +328,7 @@ void test(int msg_level, char *msg)
   }
 }
 
-
+//:TODO: http://man7.org/linux/man-pages/man3/syslog.3.html
 void logMessage(int msg_level, char *format, ...)
 {
   // Simply return ASAP.
@@ -349,9 +348,10 @@ void logMessage(int msg_level, char *format, ...)
 
   // Logging has not been setup yet, so STD error & syslog
   if (_log_level == -1) {
-    fprintf (stderr, buffer);
+    if (_daemonise == FALSE) {
+      fprintf (stderr, buffer);
+    }
     syslog (msg_level, "%s", &buffer[8]);
-    closelog ();
   }
   
   if (_daemonise == TRUE)
@@ -360,7 +360,6 @@ void logMessage(int msg_level, char *format, ...)
       syslog (LOG_DEBUG, "%s", &buffer[8]);
     else
       syslog (msg_level, "%s", &buffer[8]);
-    closelog ();
     //return;
   }
   
@@ -411,6 +410,7 @@ void logMessage(int msg_level, char *format, ...)
   }
 }
 
+// :TODO: compare to https://github.com/pasce/daemon-skeleton-linux-c
 void daemonise (char *pidFile, void (*main_function) (void))
 {
   FILE *fp = NULL;
