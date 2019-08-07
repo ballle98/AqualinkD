@@ -52,11 +52,10 @@ static struct aqualinkdata _aqualink_data;
 
 void main_loop();
 
-void intHandler(int dummy)
+void intHandler(int sig)
 {
   _keepRunning = false;
-  logMessage(LOG_NOTICE, "Stopping!");
-  if (dummy){}// stop compile warnings
+  logMessage(LOG_ERR, "Signal %s(%d) received Stopping!", strsignal(sig), sig);
 }
 
 void processLEDstate()
@@ -811,6 +810,7 @@ int main(int argc, char *argv[])
     main_loop();
   }
 
+  logMessage(LOG_NOTICE,"Exit main");
   exit(EXIT_SUCCESS);
 }
 
@@ -1265,6 +1265,6 @@ void main_loop()
 
   // NSF need to run through config memory and clean up.
 
-  logMessage(LOG_NOTICE, "Exit!\n");
+  logMessage(LOG_ERR, "Exit main_loop!\n");
   exit(EXIT_FAILURE);
 }
