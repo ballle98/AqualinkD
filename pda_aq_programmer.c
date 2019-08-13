@@ -307,7 +307,7 @@ bool select_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, bool wai
 // https://www.jandy.com/-/media/zodiac/global/downloads/0748-91071/6594.pdf
 bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
   bool ret = true;
-
+  int i =0;
   logMessage(LOG_DEBUG, "PDA Device programmer request for menu %d, current %d\n",
              menu, pda_m_type());
 
@@ -315,15 +315,21 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
       logMessage(LOG_DEBUG, "goto_pda_menu at FW version menu\n");
       send_cmd(KEY_PDA_BACK);
       if (! waitForPDAnextMenu(aq_data)) {
-          logMessage(LOG_ERR, "PDA Device programmer wait for next menu failed");
+        logMessage(LOG_ERR, "PDA Device programmer wait for next menu failed\n");
+      } else if ((pda_m_type() != PM_BUILDING_HOME) && (pda_m_type() != PM_HOME)) {
+        logMessage(LOG_NOTICE, "goto_pda_menu went from FW_VERSION to %d\n", pda_m_type());
       }
-  } else if (pda_m_type() == PM_BUILDING_HOME) {
-      logMessage(LOG_DEBUG, "goto_pda_menu building home menu\n");
-      waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,3,0);
   }
-  
 
-  while (ret && (pda_m_type() != menu)) {
+  while (ret && (pda_m_type() != menu) && (i++ < 15)) {
+    if (pda_m_type() == PM_BUILDING_HOME) {
+      logMessage(LOG_DEBUG, "goto_pda_menu building home menu\n");
+      if (! (ret=waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,3,0))) {
+        logMessage(LOG_ERR, "goto_pda_menu building home wait for highlight failed\n");
+        break;
+      }
+    }
+
     switch (menu) {
       case PM_HOME:
         ret = (send_cmd(KEY_PDA_BACK) && waitForPDAnextMenu(aq_data));
@@ -426,8 +432,8 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
                menu, pda_m_type());
   }
   if (pda_m_type() != menu) {
-    logMessage(LOG_ERR, "PDA Device programmer didn't find a requested menu %d, current %d\n",
-               menu, pda_m_type());
+    logMessage(LOG_ERR, "PDA Device programmer didn't find a requested menu %d, current %d, i=%d\n",
+               menu, pda_m_type(), i);
     return false;
   }
 
