@@ -309,6 +309,8 @@ bool select_pda_menu_item(struct aqualinkdata *aq_data, char *menuText, bool wai
 bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
   bool ret = true;
   int i =0;
+  pda_menu_type prev_menu = PM_UNKNOWN;
+
   logMessage(LOG_DEBUG, "PDA Device programmer request for menu %d, current %d\n",
              menu, pda_m_type());
 
@@ -329,8 +331,11 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
         logMessage(LOG_ERR, "goto_pda_menu building home wait for highlight failed\n");
         break;
       }
+      if (menu == pda_m_type()) {
+        break;
+      }
     }
-
+    prev_menu = pda_m_type();
     switch (menu) {
       case PM_HOME:
          send_cmd(KEY_PDA_BACK);
@@ -444,6 +449,11 @@ bool goto_pda_menu(struct aqualinkdata *aq_data, pda_menu_type menu) {
         logMessage(LOG_ERR, "PDA Device programmer didn't understand requested menu\n");
         return false;
         break;
+    }
+    if (prev_menu == pda_m_type()) {
+      logMessage(LOG_ERR, "PDA Device programmer request for menu %d, stuck on %d\n",
+                 menu, pda_m_type());
+      break;
     }
     logMessage(LOG_DEBUG, "PDA Device programmer request for menu %d, current %d\n",
                menu, pda_m_type());
@@ -709,8 +719,8 @@ bool waitForPDAMessageTypesOrMenu(struct aqualinkdata *aq_data,
                                   unsigned char mtype3, unsigned long sec,
                                   unsigned long msec, char *text, int line)
 {
-  logMessage(LOG_DEBUG, "waitForPDAMessageTypesOrMenu 0x%02hhx,0x%02hhx,%s,%d,%lu.%03lu sec\n",
-             mtype1,mtype2,text,line,sec, msec);
+  logMessage(LOG_DEBUG, "waitForPDAMessageTypesOrMenu 0x%02hhx,0x%02hhx,0x%02hhx,%s,%d,%lu.%03lu sec\n",
+             mtype1,mtype2,mtype3,text,line,sec, msec);
 
   int i=0;
   bool gotmenu = false;
@@ -736,8 +746,8 @@ bool waitForPDAMessageTypesOrMenu(struct aqualinkdata *aq_data,
     if ((ret = pthread_cond_timedwait(&aq_data->active_thread.thread_cond,
                                       &aq_data->active_thread.thread_mutex, &max_wait)))
         {
-           logMessage(LOG_ERR, "waitForPDAMessageTypesOrMenu 0x%02hhx,0x%02hhx,%s,%d - %s\n",
-                      mtype1, mtype2, text,line, strerror(ret));
+           logMessage(LOG_ERR, "waitForPDAMessageTypesOrMenu 0x%02hhx,0x%02hhx,0x%02hhx,%s,%d - %s\n",
+                      mtype1,mtype2,mtype3,text,line,strerror(ret));
            break;
         }
     if (gotmenu == false && line > 0 && text != NULL) {
@@ -747,7 +757,8 @@ bool waitForPDAMessageTypesOrMenu(struct aqualinkdata *aq_data,
         logMessage(LOG_DEBUG, "waitForPDAMessageTypesOrMenu saw '%s' in line %d\n",text,line);
       }
     }
-    if (aq_data->last_packet_type == mtype1 || aq_data->last_packet_type == mtype2)
+    if (aq_data->last_packet_type == mtype1 || aq_data->last_packet_type == mtype2 ||
+        aq_data->last_packet_type == mtype3)
       {
         break;
       }
