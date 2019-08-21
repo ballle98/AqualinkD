@@ -690,9 +690,7 @@ int main(int argc, char *argv[])
   bool cmdln_debugRS485 = false;
 
   // struct lws_context_creation_info info;
-  // Log only NOTICE messages and above. Debug and info messages
-  // will not be logged to syslog.
-  setlogmask(LOG_UPTO(LOG_NOTICE));
+  setlogmask(LOG_UPTO(LOG_DEBUG));
 
   if (getuid() != 0)
   {
