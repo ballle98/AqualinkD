@@ -66,7 +66,7 @@ void* habridge_updater_routine(void* data)
                   on_value = "false";
                 }
               snprintf(cmd_buff, sizeof(cmd_buff),
-                       "curl -sS -X PUT -d '{\"on\": %s}' 'http://%s/api/%s/lights/%d/bridgeupdatestate' > /dev/null",
+                       "curl -sS -X PUT -d '{\"on\": %s}' 'http://%s/api/%s/lights/%d/bridgeupdatestate' > /dev/null 2>&1",
                        on_value, aqconfig->habridge_server,
                        aqconfig->habridge_user, aqdata->aqbuttons[i].hab_id);
               logMessage (LOG_DEBUG, "habridge_updater_routine %s\n", cmd_buff);
