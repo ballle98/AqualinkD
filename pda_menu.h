@@ -29,7 +29,10 @@ typedef enum pda_menu_type {
   PM_EQUIPTMENT_CONTROL,
   PM_EQUIPTMENT_STATUS,
   PM_PALM_OPTIONS, // This seems to be only older revisions
-  PM_BOOST
+  PM_BOOST,
+  PM_TURN_ON_AFTER_DELAY,
+  PM_SERVICE_MODE,
+  PM_MUST_BE_SET_HIGHER_THAN
 } pda_menu_type;
 
 // PDA Line 4 = POOL MODE    OFF
