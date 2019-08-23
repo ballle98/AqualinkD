@@ -166,6 +166,14 @@ pda_menu_type pda_m_type()
     return PM_AUX_LABEL_DEVICE;
   } else if (strstr(_menu[0],"BOOST")) { // This is bad check, but PDA menus are BOOST | BOOST POOL | BOOST SPA, need to do better.
     return PM_BOOST;
+  } else if (strncasecmp(_menu[5],"    TURN  ON    ", 16) == 0 &&
+             strncasecmp(_menu[6],"  AFTER DELAY   ", 16) == 0) {
+    return PM_TURN_ON_AFTER_DELAY;
+  } else if (strncasecmp(_menu[3],"  SERVICE MODE  ", 16) == 0) {
+    return PM_SERVICE_MODE;
+  } else if (strncasecmp(_menu[5],"  must be set   ", 16) == 0 &&
+             strncasecmp(_menu[6],"  higher than   ", 16) == 0) {
+    return PM_MUST_BE_SET_HIGHER_THAN;
   }
   return PM_UNKNOWN;
 }
