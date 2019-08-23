@@ -123,6 +123,9 @@ bool wait_pda_selected_item(struct aqualinkdata *aq_data)
 }
 
 bool waitForPDAnextMenu(struct aqualinkdata *aq_data) {
+  pda_menu_type menu;
+
+  logMessage(LOG_DEBUG, "waitForPDAnextMenu\n");
   if (!waitForPDAMessageTypes(aq_data,CMD_PDA_CLEAR,CMD_STATUS,2,0)) {
     logMessage(LOG_ERR, "waitForPDAnextMenu - no CLEAR or STATUS\n");
     return false;
@@ -140,7 +143,9 @@ bool waitForPDAnextMenu(struct aqualinkdata *aq_data) {
     // The FW version and status menus do not have highlight
     logMessage(LOG_NOTICE, "waitForPDAnextMenu - received STATUS instead of HIGHLIGHT\n");
   } else if ((aq_data->last_packet_type == CMD_PDA_HIGHLIGHTCHARS) &&
-             (pda_m_type() == PM_EQUIPTMENT_CONTROL)) {
+             (((menu = pda_m_type()) == PM_EQUIPTMENT_CONTROL) ||
+              (menu == PM_HOME) || (menu == PM_BUILDING_HOME))) {
+      // Flashing state for filter pump and spa mode is done with HIGHLIGHTCHARS
       if (! waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_STATUS,2,0)) {
         logMessage(LOG_ERR, "waitForPDAnextMenu - EQUIPTMENT_CONTROL no HIGHLIGHT or STATUS\n");
         return false;
