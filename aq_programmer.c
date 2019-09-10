@@ -1248,13 +1248,13 @@ char* compareAndCareStrings(const char* str1, const char* str2)
 * Example: "^Hello World\0" returns "Hello World\0".
 */
 
-char* stripCaretFromFrontOfString(const char* str1)
+char* stripCaretFromFrontOfString(const char* str)
 {	
-	if (str1 != NULL) {
-		if (str1[0] == '^')
-			return &str1[1];
+	if (str != NULL) {
+		if (str[0] == '^')
+			return &str[1];
 		else
-			return str1;
+			return str;
 	}
 	return NULL;
 }
