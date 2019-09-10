@@ -1240,7 +1240,7 @@ char* compareAndCareStrings(const char* str1, const char* str2)
 				return ptr;
 		}
 	}
-	return nullptr;
+	return NULL;
 }
 
 /*
@@ -1277,8 +1277,8 @@ bool waitForEitherMessage(struct aqualinkdata *aq_data, char* message1, char* me
   {
     logMessage(LOG_DEBUG, "Programming mode: loop %d of %d looking for '%s' OR '%s' received message1 '%s'\n",i,numMessageReceived,message1,message2,aq_data->last_message);
     
-	if (nullptr != (ptr = compareAndCareStrings(message1, msgS1))) break;
-	if (nullptr != (ptr = compareAndCareStrings(message2, msgS2))) break;
+	if (NULL != (ptr = compareAndCareStrings(message1, msgS1))) break;
+	if (NULL != (ptr = compareAndCareStrings(message2, msgS2))) break;
     
     //logMessage(LOG_DEBUG, "Programming mode: looking for '%s' received message1 '%s'\n",message1,aq_data->last_message);
     pthread_cond_wait(&aq_data->active_thread.thread_cond, &aq_data->active_thread.thread_mutex);
@@ -1311,13 +1311,8 @@ bool waitForMessage(struct aqualinkdata *aq_data, char* message, int numMessageR
   char* msgS;
   char* ptr = NULL;
   
-  if (message != NULL) {
-    if (message[0] == '^')
-      msgS = &message[1];
-    else
-      msgS = message;
-  }
-  
+  char* msgS = stripCaretFromFrontOfString(message1);
+    
   while( ++i <= numMessageReceived)
   {
     if (message != NULL)
@@ -1325,31 +1320,26 @@ bool waitForMessage(struct aqualinkdata *aq_data, char* message, int numMessageR
     else
       logMessage(LOG_DEBUG, "Programming mode: loop %d of %d waiting for next message, received '%s'\n",i,numMessageReceived,aq_data->last_message);
 
-    if (message != NULL) {
-      ptr = stristr(aq_data->last_message, msgS);
-      if (ptr != NULL) { // match
-        logMessage(LOG_DEBUG, "Programming mode: String MATCH\n");
-        if (msgS == message) // match & don't care if first char
-          break;
-        else if (ptr == aq_data->last_message) // match & do care if first char
-          break;
-      }
-    }
+	if (NULL != (ptr = compareAndCareStrings(message, msgS))) break;
     
     //logMessage(LOG_DEBUG, "Programming mode: looking for '%s' received message '%s'\n",message,aq_data->last_message);
     pthread_cond_wait(&aq_data->active_thread.thread_cond, &aq_data->active_thread.thread_mutex);
     //logMessage(LOG_DEBUG, "Programming mode: loop %d of %d looking for '%s' received message '%s'\n",i,numMessageReceived,message,aq_data->last_message);
   }
   
-  pthread_mutex_unlock(&aq_data->active_thread.thread_mutex);
-  
-  if (message != NULL && ptr == NULL) {
+  if (message != NULL && 
+	  ptr == NULL) {
     //logMessage(LOG_ERR, "Could not select MENU of Aqualink control panel\n");
     logMessage(LOG_DEBUG, "Programming mode: did not find '%s'\n",message);
     return false;
-  } else if (message != NULL)
-    logMessage(LOG_DEBUG, "Programming mode: found message '%s' in '%s'\n",message,aq_data->last_message);
+  }
+  else if (message != NULL)
+  {
+    logMessage(LOG_DEBUG, "Programming mode: found message '%s' in '%s'\n", message, aq_data->last_message);
+  }    
   
+  pthread_mutex_unlock(&aq_data->active_thread.thread_mutex);
+
   return true;
 }
 
