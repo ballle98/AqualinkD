@@ -223,14 +223,6 @@ bool process_pda_menu_packet(unsigned char* packet, int length)
       }
       if (getLogLevel(PDA_LOG) >= LOG_DEBUG){print_menu();}
     break;
-    case CMD_PDA_HIGHLIGHTCHARS:
-      if (packet[4] <= PDA_LINES) {
-        _hlightindex = packet[4];
-      } else {
-        _hlightindex = -1;
-      }
-      if (getLogLevel(PDA_LOG) >= LOG_DEBUG){print_menu();}
-    break;
     case CMD_PDA_SHIFTLINES:
       /// press up from top - shift menu down by 1
        //   PDA Shif | HEX: 0x10|0x02|0x62|0x0f|0x01|0x08|0x01|0x8d|0x10|0x03|
