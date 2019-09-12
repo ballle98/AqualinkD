@@ -522,16 +522,18 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
                        aq_data->aqbuttons[device].pda_label);
           } else {
               send_cmd(KEY_PDA_SELECT);
-              if (!waitForPDAMessageType(aq_data,CMD_PDA_HIGHLIGHT,5,0)) {
-                  logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",
-                             aq_data->aqbuttons[device].pda_label);
-              }
+              waitForPDAnextMenu(aq_data);
           }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aq_data,CMD_MSG_LONG,3,0)) {
-              logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",
+          if (!waitForPDAMessageType(aq_data,CMD_STATUS,3,0)) {
+              logMessage(LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_STATUS\n",
                          aq_data->aqbuttons[device].pda_label);
+          }
+          // check for delay status
+          if (pda_m_type() == PM_TURN_ON_AFTER_DELAY) {
+              send_cmd(KEY_PDA_BACK);
+              waitForPDAnextMenu(aq_data);
           }
       }
     } else {
