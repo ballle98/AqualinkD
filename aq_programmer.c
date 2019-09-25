@@ -2229,7 +2229,7 @@ bool send_cmd(unsigned char cmd)
         }
     }
   if (ret) {
-      LOG(PROG_LOG, LOG_INFO, "sent '0x%02hhx' to controller\n", _pgm_command);
+      LOG(PROG_LOG, LOG_INFO, "sent '0x%02hhx' to controller\n", cmd);
   }
   pthread_mutex_unlock(&_pgm_command_mutex);
   return ret;
