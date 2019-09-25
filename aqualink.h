@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "aq_serial.h"
 #include "aq_programmer.h"
@@ -122,6 +123,7 @@ struct aqualinkdata
   struct timespec start_active_time;
   pthread_mutex_t mutex;
   pthread_cond_t thread_finished_cond;
+  struct tm tm;
 };
 
 

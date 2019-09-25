@@ -795,13 +795,9 @@ bool waitForPDAMessageTypes(struct aqualinkdata *aq_data, unsigned char mtype1,
   return waitForPDAMessageTypesOrMenu(aq_data, mtype1, mtype2, 0xFF, sec, msec, NULL, 0);
 }
 
-bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur_val, char *select_label, int step) {
+bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int cur_val, char *select_label, int step) {
   int i=0;
 
-  if (val == *cur_val) {
-    logMessage(LOG_INFO, "PDA %s value : already at %d\n", select_label, val);
-    return true;
-  }
   if (select_label != NULL) {
     // :TODO: Should probably change below to call find_pda_menu_item(), rather than doing it here
     // If we lease this, need to limit on the number of loops
@@ -818,20 +814,22 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int *cur
     send_cmd(KEY_PDA_SELECT);
   }
 
-  if (val < *cur_val) {
-    logMessage(LOG_DEBUG, "PDA %s value : lower from %d to %d\n", select_label, *cur_val, val);
-    for (i = *cur_val; i > val; i=i-step) {
+  if (val == cur_val) {
+    logMessage(LOG_INFO, "PDA %s value : already at %d\n", select_label, val);
+  } else if (val < cur_val) {
+    logMessage(LOG_DEBUG, "PDA %s value : lower from %d to %d\n", select_label, cur_val, val);
+    for (i = cur_val; i > val; i=i-step) {
       send_cmd(KEY_PDA_DOWN);
     }
-  } else if (val > *cur_val) {
-    logMessage(LOG_DEBUG, "PDA %s value : raise from %d to %d\n", select_label, *cur_val, val);
-    for (i = *cur_val; i < val; i=i+step) {
+  } else if (val > cur_val) {
+    logMessage(LOG_DEBUG, "PDA %s value : raise from %d to %d\n", select_label, cur_val, val);
+    for (i = cur_val; i < val; i=i+step) {
       send_cmd(KEY_PDA_UP);
     }
   }
   send_cmd(KEY_PDA_SELECT);
 
-  logMessage(LOG_DEBUG, "PDA %s value : set to %d\n", select_label, *cur_val);
+  logMessage(LOG_DEBUG, "PDA %s value : set to %d\n", select_label, val);
   
   return true;
 }
@@ -843,36 +841,36 @@ bool set_PDA_aqualink_SWG_setpoint(struct aqualinkdata *aq_data, int val) {
   }
 
   if (aq_data->aqbuttons[SPA_INDEX].led->state != OFF) 
-    return set_PDA_numeric_field_value(aq_data, val, &aq_data->swg_percent, "SET SPA", 5);
+    return set_PDA_numeric_field_value(aq_data, val, aq_data->swg_percent, "SET SPA", 5);
   else
-    return set_PDA_numeric_field_value(aq_data, val, &aq_data->swg_percent, "SET POOL", 5);
+    return set_PDA_numeric_field_value(aq_data, val, aq_data->swg_percent, "SET POOL", 5);
   
   //return true;
 }
 
 bool set_PDA_aqualink_heater_setpoint(struct aqualinkdata *aq_data, int val, bool isPool) {
   char label[10];
-  int *cur_val;
+  int cur_val;
 
   if ( aq_data->single_device != true ) {
     if (isPool) {
       sprintf(label, "POOL HEAT");
-      cur_val = &aq_data->pool_htr_set_point;
+      cur_val = aq_data->pool_htr_set_point;
     } else {
       sprintf(label, "SPA HEAT");
-      cur_val = &aq_data->spa_htr_set_point;
+      cur_val = aq_data->spa_htr_set_point;
     }
   } else {
     if (isPool) {
       sprintf(label, "TEMP1");
-      cur_val = &aq_data->pool_htr_set_point;
+      cur_val = aq_data->pool_htr_set_point;
     } else {
       sprintf(label, "TEMP2");
-      cur_val = &aq_data->spa_htr_set_point;
+      cur_val = aq_data->spa_htr_set_point;
     }
   }
 
-  if (val == *cur_val) {
+  if (val == cur_val) {
     logMessage(LOG_INFO, "PDA %s setpoint : temp already %d\n", label, val);
     send_cmd(KEY_PDA_BACK);
     return true;
@@ -896,12 +894,46 @@ bool set_PDA_aqualink_freezeprotect_setpoint(struct aqualinkdata *aq_data, int v
   } else if (! goto_pda_menu(aq_data, PM_FREEZE_PROTECT)) {
     logMessage(LOG_ERR, "Error finding freeze protect setpoints menu\n");
     return false;
-  } else if (! set_PDA_numeric_field_value(aq_data, val, &aq_data->frz_protect_set_point, NULL, 1)) {
+  } else if (! set_PDA_numeric_field_value(aq_data, val, aq_data->frz_protect_set_point, NULL, 1)) {
     logMessage(LOG_ERR, "Error failed to set freeze protect temp value\n");
     return false;
   } else {
       return waitForPDAnextMenu(aq_data);
   }
+}
+
+bool set_PDA_aqualink_time(struct aqualinkdata *aq_data) {
+  if (! goto_pda_menu(aq_data, PM_SET_TIME)) {
+    logMessage(LOG_ERR, "Error finding set time menu\n");
+    return false;
+  }
+  struct tm tm;
+  time_t now;
+  static char result[30];
+
+  time(&now);   // get time now
+  localtime_r(&now, &tm);
+  logMessage(LOG_DEBUG, "set_PDA_aqualink_time %s\n",
+             asctime_r(&tm,result));
+  if (! set_PDA_numeric_field_value(aq_data, tm.tm_mon, aq_data->tm.tm_mon, NULL, 1)) {
+    logMessage(LOG_ERR, "Error failed to set time month\n");
+  } else if (! set_PDA_numeric_field_value(aq_data, tm.tm_mday, aq_data->tm.tm_mday, NULL, 1)) {
+    logMessage(LOG_ERR, "Error failed to set time day\n");
+  } else if (! set_PDA_numeric_field_value(aq_data, tm.tm_year, aq_data->tm.tm_year, NULL, 1)) {
+    logMessage(LOG_ERR, "Error failed to set time year\n");
+  } else if (! set_PDA_numeric_field_value(aq_data, tm.tm_hour, aq_data->tm.tm_hour, NULL, 1)) {
+    logMessage(LOG_ERR, "Error failed to set time hour\n");
+  } else {
+    time(&now);   // update time
+    localtime_r(&now, &tm);
+    if (! set_PDA_numeric_field_value(aq_data, tm.tm_min, aq_data->tm.tm_min, NULL, 1)) {
+      logMessage(LOG_ERR, "Error failed to set time minutes\n");
+    }
+    waitForPDAnextMenu(aq_data);
+    logMessage(LOG_INFO, "PDA time set to %s\n",
+               asctime_r(&tm,result));
+  }
+  return true;
 }
 
 // Test ine this.
