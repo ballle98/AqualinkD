@@ -206,16 +206,18 @@ bool process_pda_menu_packet(unsigned char* packet, int length)
   signed char last_line;
   signed char line_shift;
   signed char i;
+  int index = 0;
 
   switch (packet[PKT_CMD]) {
     case CMD_PDA_CLEAR:
       rtn = pda_m_clear();
     break;
     case CMD_MSG_LONG:
-      if (packet[PKT_DATA] < 10) {
-        memset(_menu[packet[PKT_DATA]], 0, AQ_MSGLEN);
-        strncpy(_menu[packet[PKT_DATA]], (char*)packet+PKT_DATA+1, AQ_MSGLEN);
-        _menu[packet[PKT_DATA]][AQ_MSGLEN] = '\0';
+      index = packet[PKT_DATA] & 0xF;
+      if (index < 10) {
+        memset(_menu[index], 0, AQ_MSGLEN);
+        strncpy(_menu[index], (char*)packet+PKT_DATA+1, AQ_MSGLEN);
+        _menu[index][AQ_MSGLEN] = '\0';
       }
       if (getLogLevel() >= LOG_DEBUG){print_menu();}
     break;
