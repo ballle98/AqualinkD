@@ -4,6 +4,8 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
+
 #include "aq_serial.h"
 #include "aq_programmer.h"
 #include "aq_panel.h"
@@ -211,6 +213,7 @@ struct aqualinkdata
   #endif
   pthread_mutex_t mutex;
   pthread_cond_t thread_finished_cond;
+  struct tm tm;
 };
 
 
