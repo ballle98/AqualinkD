@@ -1489,6 +1489,14 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
     //nc->user_data = WS;
     _aqualink_data->open_websockets++;
     LOG(NET_LOG,LOG_DEBUG, "++ Websocket joined\n");
+#ifdef AQ_PDA
+    // If no active threads wake up
+    if ((_aqualink_data->active_thread.thread_id == 0) &&
+        _aqconfig_.pda_sleep_with_websock &&
+        _aqconfig_.pda_sleep_mode) {
+        memset(&(_aqualink_data->last_active_time), 0, sizeof(struct timespec));
+    }
+#endif
     break;
   
   case MG_EV_WEBSOCKET_FRAME: 
