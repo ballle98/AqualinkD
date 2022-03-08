@@ -481,7 +481,7 @@ void _LOG(int16_t from, int msg_level,  char *message)
   //int len;
   message[8] = ' ';
   char *strLevel = elevel2text(msg_level);
-  strncpy(message, strLevel, strlen(strLevel));
+  memcpy(message, strLevel, strlen(strLevel));
   //len = strlen(message); 
   /*
   if ( message[len-1] != '\n') {

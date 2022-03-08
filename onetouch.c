@@ -560,14 +560,17 @@ void set_macro_status()
   // OneTouch Menu Line 8 = ONETOUCH 3   OFF
   if (get_onetouch_menu_type() == OTM_ONETOUCH) {
     strncpy(_macros[0].name, _menu[2], 13);
+    _macros[0].name[13] = '\0';
     chopwhitespace(_macros[0].name);
     _macros[0].ison = (_menu[2][15] == 'N'?true:false);
 
     strncpy(_macros[1].name, _menu[5], 13);
+    _macros[1].name[13] = '\0';
     chopwhitespace(_macros[1].name);
     _macros[1].ison = (_menu[5][15] == 'N'?true:false);
 
     strncpy(_macros[2].name, _menu[8], 13);
+    _macros[2].name[13] = '\0';
     chopwhitespace(_macros[2].name);
     _macros[2].ison = (_menu[8][15] == 'N'?true:false);
 

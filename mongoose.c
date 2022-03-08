@@ -9026,7 +9026,10 @@ static void mg_do_ssi_include(struct mg_connection *nc, struct http_message *hm,
    */
   if (sscanf(tag, " virtual=\"%[^\"]\"", file_name) == 1) {
     /* File name is relative to the webserver root */
-    snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
+    int n = snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
+    if ((n <0) || ((size_t)n > sizeof (path))) {
+        mg_printf(nc, "Bad SSI #include path too long: [%s]", tag);
+    }
   } else if (sscanf(tag, " abspath=\"%[^\"]\"", file_name) == 1) {
     /*
      * File name is relative to the webserver working directory
@@ -11590,7 +11593,8 @@ int mg_resolve_async_opt(struct mg_mgr *mgr, const char *name, int query,
     return -1;
   }
 
-  strncpy(req->name, name, sizeof(req->name));
+  strncpy(req->name, name, sizeof(req->name)-1);
+  req->name[sizeof(req->name)-1] = '\0';
   req->query = query;
   req->callback = cb;
   req->data = data;

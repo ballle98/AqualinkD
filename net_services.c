@@ -822,7 +822,7 @@ uriAtype action_URI(netRequest from, const char *URI, int uri_length, float valu
   // Action Light program.
   } else if ((ri3 != NULL && ((strncasecmp(ri2, "color", 5) == 0) || (strncasecmp(ri2, "program", 7) == 0)) && (strncasecmp(ri3, "set", 3) == 0))) {
     found = false;
-    snprintf(labelBuff, sizeof(labelBuff), "%.*s", ri2-ri1-1, ri1);
+    snprintf(labelBuff, sizeof(labelBuff), "%.*s", (int)(ri2-ri1-1), ri1);
     for (i=0; i < _aqualink_data->total_buttons; i++) {
       if (strcmp(labelBuff, _aqualink_data->aqbuttons[i].name) == 0 ||
           strcmp(labelBuff, _aqualink_data->aqbuttons[i].label) == 0)
@@ -871,7 +871,7 @@ uriAtype action_URI(netRequest from, const char *URI, int uri_length, float valu
         }
       }
     } else { // Pump by button name
-      snprintf(labelBuff, sizeof(labelBuff), "%.*s", ri2-ri1-1, ri1);
+      snprintf(labelBuff, sizeof(labelBuff), "%.*s", (int)(ri2-ri1-1), ri1);
 
       for (i=0; i < _aqualink_data->total_buttons ; i++) {
         if (strcmp(labelBuff, _aqualink_data->aqbuttons[i].name) == 0 ){
@@ -916,7 +916,7 @@ uriAtype action_URI(netRequest from, const char *URI, int uri_length, float valu
     // Must be a switch on / off
     rtn = uActioned;
     found = false;
-    snprintf(labelBuff, sizeof(labelBuff), "%.*s", ri2-ri1-1, ri1);
+    snprintf(labelBuff, sizeof(labelBuff), "%.*s", (int)(ri2-ri1-1), ri1);
     for (i=0; i < _aqualink_data->total_buttons; i++) {
       if (strcmp(labelBuff, _aqualink_data->aqbuttons[i].name) == 0 ||
           strcmp(labelBuff, _aqualink_data->aqbuttons[i].label) == 0)
@@ -1166,7 +1166,7 @@ void action_web_request(struct mg_connection *nc, struct http_message *http_msg)
       mg_send(nc, GET_RTN_UNKNOWN, strlen(GET_RTN_UNKNOWN));
     }
     snprintf(buf, sizeof(buf), "action_web_request() request '%.*s' took",
-             http_msg->uri.len, http_msg->uri.p);
+             (int)(http_msg->uri.len), http_msg->uri.p);
 
     DEBUG_TIMER_STOP(tid, NET_LOG, buf);
   }
