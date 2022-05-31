@@ -158,10 +158,12 @@ void pass_pda_equiptment_status_item(char *msg)
   //      RPM: 1700  
   //     Watts: 367  
   // 
+  // EQUIPMENT STATUS
   // 
-  // 
-  // 
-  // 
+  //      BOOST      
+  //   23:59 REMAIN  
+  //  SALT 25500 PPM 
+  //   FILTER PUMP   
 
   // Check message for status of device
   // Loop through all buttons and match the PDA text.
@@ -172,6 +174,14 @@ void pass_pda_equiptment_status_item(char *msg)
   else if ((index = strcasestr(msg, "FREEZE PROTECT")) != NULL)
   {
     _aqualink_data->frz_protect_state = ON;
+  }
+  else if ((index = strcasestr(msg, "BOOST")) != NULL)
+  {
+    setSWGboost(_aqualink_data, true);
+  }
+  else if ((_aqualink_data->boost) && ((index = strcasestr(msg, "REMAIN")) != NULL))
+  {
+    snprintf(_aqualink_data->boost_msg, sizeof(_aqualink_data->boost_msg), "%s", msg+2);
   }
   else if ((index = strcasestr(msg, MSG_SWG_PCT)) != NULL)
   {
@@ -323,13 +333,12 @@ void process_pda_packet_msg_long_equipment_control(const char *msg)
     {
       LOG(PDA_LOG,LOG_DEBUG, "*** Found EQ CTL Status for %s = '%.*s'\n", _aqualink_data->aqbuttons[i].label, AQ_MSGLEN, msg);
       set_pda_led(_aqualink_data->aqbuttons[i].led, msg[AQ_MSGLEN - 1]);
+      // Force SWG off if pump is off.
+      if ((i==0) && (_aqualink_data->aqbuttons[0].led->state == OFF )) {
+        setSWGoff(_aqualink_data);
+      }
     }
   }
-
-  // Force SWG off if pump is off.
-  if (_aqualink_data->aqbuttons[0].led->state == OFF )
-    setSWGoff(_aqualink_data);
-    //_aqualink_data->ar_swg_status = SWG_STATUS_OFF;
 
   // NSF I think we need to check TEMP1 and TEMP2 and set Pool HEater and Spa heater directly, to support single device.
   if (isSINGLE_DEV_PANEL){
@@ -471,27 +480,33 @@ void process_pda_packet_msg_long_freeze_protect(const char *msg)
 
 void process_pda_packet_msg_long_SWG(const char *msg)
 {
-  //PDA Line 0 =   SET AquaPure
-  //PDA Line 1 =
-  //PDA Line 2 =
-  //PDA Line 3 = SET POOL TO: 45%
-  //PDA Line 4 =  SET SPA TO:  0%
+  // Single Setpoint
+  // PDA Line 0 =   SET AquaPure
+  // PDA Line 1 =
+  // PDA Line 2 =
+  // PDA Line 3 =    SET TO 100%
+
+  // Dual Setpoint
+  // PDA Line 0 =   SET AquaPure
+  // PDA Line 1 =
+  // PDA Line 2 =
+  // PDA Line 3 = SET POOL TO: 45%
+  // PDA Line 4 =  SET SPA TO:  0%
 
   // If spa is on, read SWG for spa, if not set SWG for pool
-  if (_aqualink_data->aqbuttons[SPA_INDEX].led->state != OFF) {
-    if (strncasecmp(msg, "SET SPA TO:", 11) == 0)
-    {
+  if (strncasecmp(msg+3, "SET TO", 6) == 0) {
+    setSWGpercent(_aqualink_data, atoi(msg + 10));
+    LOG(PDA_LOG,LOG_DEBUG, "swg_percent = %d\n", _aqualink_data->swg_percent);
+  } else if (_aqualink_data->aqbuttons[SPA_INDEX].led->state != OFF) {
+    if (strncasecmp(msg+1, "SET SPA TO:", 11) == 0) {
       //_aqualink_data->swg_percent = atoi(msg + 13);
-      setSWGpercent(_aqualink_data, atoi(msg + 13));
+      setSWGpercent(_aqualink_data, atoi(msg + 12));
       LOG(PDA_LOG,LOG_DEBUG, "SPA swg_percent = %d\n", _aqualink_data->swg_percent);
     }
-  } else {
-    if (strncasecmp(msg, "SET POOL TO:", 12) == 0)
-    {
+  } else if (strncasecmp(msg, "SET POOL TO:", 12) == 0) {
       //_aqualink_data->swg_percent = atoi(msg + 13);
-      setSWGpercent(_aqualink_data, atoi(msg + 13));
+      setSWGpercent(_aqualink_data, atoi(msg + 12));
       LOG(PDA_LOG,LOG_DEBUG, "POOL swg_percent = %d\n", _aqualink_data->swg_percent);
-    } 
   }
 }
 
@@ -660,15 +675,20 @@ bool process_pda_packet(unsigned char *packet, int length)
     // Note: if the last line of the status menu is present it may be cut off
     if (pda_m_type() == PM_EQUIPTMENT_STATUS)
     {
-      if (_aqualink_data->frz_protect_state == ON)
+      if (_aqualink_data->frz_protect_state == ON) {
         _aqualink_data->frz_protect_state = ENABLE;
-      
+      }
       //if (_aqualink_data->ar_swg_status == SWG_STATUS_ON) 
       //  _aqualink_data->ar_swg_status = SWG_STATUS_OFF;
 
-      if (_aqualink_data->swg_led_state == ON)
+      if (_aqualink_data->swg_led_state == ON) {
         setSWGenabled(_aqualink_data);
-      
+      }
+
+      if (_aqualink_data->boost) {
+          setSWGboost(_aqualink_data, false);
+      }
+
       if (pda_m_line(PDA_LINES - 1)[0] == '\0')
       {
         for (i = 0; i < _aqualink_data->total_buttons; i++)

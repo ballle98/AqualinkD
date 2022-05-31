@@ -201,6 +201,7 @@ bool setSWGboost(struct aqualinkdata *aqdata, bool on) {
   } else {
     aqdata->boost = true;
     aqdata->swg_percent = 101;
+    aqdata->swg_led_state = ON;
   }
 
   return true;
