@@ -486,6 +486,11 @@ void process_pda_packet_msg_long_SWG(const char *msg)
   // PDA Line 2 =
   // PDA Line 3 =    SET TO 100%
 
+  // PDA Line 0 =   SET AquaPure
+  // PDA Line 1 =
+  // PDA Line 2 =
+  // PDA Line 3 =      SET TO: 20%
+
   // Dual Setpoint
   // PDA Line 0 =   SET AquaPure
   // PDA Line 1 =
@@ -497,6 +502,9 @@ void process_pda_packet_msg_long_SWG(const char *msg)
   if (strncasecmp(msg+3, "SET TO", 6) == 0) {
     setSWGpercent(_aqualink_data, atoi(msg + 10));
     LOG(PDA_LOG,LOG_DEBUG, "swg_percent = %d\n", _aqualink_data->swg_percent);
+  } else if (strncasecmp(msg+5, "SET TO:", 7) == 0) {
+      setSWGpercent(_aqualink_data, atoi(msg + 12));
+      LOG(PDA_LOG,LOG_DEBUG, "swg_percent = %d\n", _aqualink_data->swg_percent);
   } else if (_aqualink_data->aqbuttons[SPA_INDEX].led->state != OFF) {
     if (strncasecmp(msg+1, "SET SPA TO:", 11) == 0) {
       //_aqualink_data->swg_percent = atoi(msg + 13);
