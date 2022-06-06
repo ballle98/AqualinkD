@@ -904,7 +904,11 @@ bool set_PDA_aqualink_SWG_setpoint(struct aqualinkdata *aq_data, int val) {
   
   if (! goto_pda_menu(aq_data, PM_AQUAPURE)) {
     LOG(PDA_LOG,LOG_ERR, "Error finding SWG setpoints menu\n");
+    return false;
   }
+  // wait for menu to display to capture current value with process_pda_packet_msg_long_SWG
+  waitForPDAMessageTypes(aq_data,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,2,0);
+
   if (pda_find_m_index("SET POOL") < 0) {
     // Single Setpoint Screen
     return set_PDA_numeric_field_value(aq_data, val, aq_data->swg_percent, NULL, 5);

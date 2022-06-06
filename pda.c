@@ -478,8 +478,9 @@ void process_pda_packet_msg_long_freeze_protect(const char *msg)
   }
 }
 
-void process_pda_packet_msg_long_SWG(const char *msg)
+void process_pda_packet_msg_long_SWG(int index, const char *msg)
 {
+  char *ptr = NULL;
   // Single Setpoint
   // PDA Line 0 =   SET AquaPure
   // PDA Line 1 =
@@ -498,23 +499,22 @@ void process_pda_packet_msg_long_SWG(const char *msg)
   // PDA Line 3 = SET POOL TO: 45%
   // PDA Line 4 =  SET SPA TO:  0%
 
-  // If spa is on, read SWG for spa, if not set SWG for pool
-  if (strncasecmp(msg+3, "SET TO", 6) == 0) {
-    setSWGpercent(_aqualink_data, atoi(msg + 10));
+  // Note: use pda_m_line(index) instead of msg because it is NULL terminated
+  if ((ptr = strcasestr(pda_m_line(index), "SET TO")) != NULL) {
+    setSWGpercent(_aqualink_data, atoi(ptr+7));
     LOG(PDA_LOG,LOG_DEBUG, "swg_percent = %d\n", _aqualink_data->swg_percent);
-  } else if (strncasecmp(msg+5, "SET TO:", 7) == 0) {
-      setSWGpercent(_aqualink_data, atoi(msg + 12));
-      LOG(PDA_LOG,LOG_DEBUG, "swg_percent = %d\n", _aqualink_data->swg_percent);
-  } else if (_aqualink_data->aqbuttons[SPA_INDEX].led->state != OFF) {
-    if (strncasecmp(msg+1, "SET SPA TO:", 11) == 0) {
-      //_aqualink_data->swg_percent = atoi(msg + 13);
-      setSWGpercent(_aqualink_data, atoi(msg + 12));
+  } else if ((ptr = strcasestr(pda_m_line(index), "SET SPA TO")) != NULL) {
+    if (_aqualink_data->aqbuttons[SPA_INDEX].led->state != OFF) {
+      setSWGpercent(_aqualink_data, atoi(ptr+11));
       LOG(PDA_LOG,LOG_DEBUG, "SPA swg_percent = %d\n", _aqualink_data->swg_percent);
     }
-  } else if (strncasecmp(msg, "SET POOL TO:", 12) == 0) {
-      //_aqualink_data->swg_percent = atoi(msg + 13);
-      setSWGpercent(_aqualink_data, atoi(msg + 12));
+  } else if ((ptr = strcasestr(pda_m_line(index), "SET POOL TO")) != NULL) {
+    if (_aqualink_data->aqbuttons[SPA_INDEX].led->state == OFF) {
+      setSWGpercent(_aqualink_data, atoi(ptr + 12));
       LOG(PDA_LOG,LOG_DEBUG, "POOL swg_percent = %d\n", _aqualink_data->swg_percent);
+    }
+  } else if (index == 3) {
+    LOG(PDA_LOG,LOG_ERR, "process msg SWG POOL idx %d unmatched %s\n", index, pda_m_line(index));
   }
 }
 
@@ -764,7 +764,7 @@ bool process_pda_packet(unsigned char *packet, int length)
           process_pda_packet_msg_long_freeze_protect(msg);
         break;
         case PM_AQUAPURE:
-          process_pda_packet_msg_long_SWG(msg);
+          process_pda_packet_msg_long_SWG(index, msg);
         break;
         case PM_AUX_LABEL_DEVICE:
           process_pda_packet_msg_long_level_aux_device(msg);
@@ -783,7 +783,7 @@ bool process_pda_packet(unsigned char *packet, int length)
     }
 
     // printf("** Line index='%d' Highligh='%s' Message='%.*s'\n",pda_m_hlightindex(), pda_m_hlight(), AQ_MSGLEN, msg);
-    LOG(PDA_LOG,LOG_INFO, "PDA Menu '%d' Selectedline '%s', Last line received '%.*s'\n", pda_m_type(), pda_m_hlight(), AQ_MSGLEN, msg);
+    LOG(PDA_LOG,LOG_INFO, "PDA Menu %d Idx %d Selectedline '%s', Last line received '%.*s'\n", pda_m_type(), index, pda_m_hlight(), AQ_MSGLEN, msg);
     break;
   }
   case CMD_PDA_0x1B:
