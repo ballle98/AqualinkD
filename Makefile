@@ -78,6 +78,8 @@ else
    endif
 endif
 
+GIT_HASH = $(shell git rev-parse --short HEAD)
+$(info GIT_HASH: $(GIT_HASH) )
 
 # Main source files
 SRCS = aqualinkd.c utils.c config.c aq_serial.c aq_panel.c aq_programmer.c \
@@ -131,9 +133,9 @@ endif
 
 
 # Put all flags together.
-CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS)
+CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
 
 # Other sources.
 DBG_SRC = $(SRCS) debug_timer.c

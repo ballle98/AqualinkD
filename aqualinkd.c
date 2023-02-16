@@ -1064,7 +1064,7 @@ void action_delayed_request()
 
 void printHelp()
 {
-  printf("%s %s\n",AQUALINKD_NAME,AQUALINKD_VERSION);
+  printf("%s %s (rev %s)\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
   printf("\t-h         (this message)\n");
   printf("\t-d         (do not deamonize)\n");
   printf("\t-c <file>  (Configuration file)\n");
@@ -1249,7 +1249,7 @@ int startup(char *self, char *cfgFile)
     setLoggingPrms(_aqconfig_.log_level, _aqconfig_.deamonize, _aqconfig_.log_file, NULL);
 #endif
 
-  LOG(AQUA_LOG,LOG_NOTICE, "%s v%s\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+   LOG(AQUA_LOG,LOG_NOTICE, "%s v%s (rev %s)\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
 /*
   LOG(AQUA_LOG,LOG_NOTICE, "Panel set to %s%s-%d %s%s %s\n",
       isRS_PANEL?"RS":"",
