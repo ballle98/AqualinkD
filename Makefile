@@ -23,6 +23,8 @@ GLIBC_VERSION = $(shell ldd --version | grep ldd)
 $(info GLIBC build with: $(GLIBC_VERSION) )
 $(info GLIBC Prefered  : 2.24-11+deb9u1 2.24 )
 endif
+GIT_HASH = $(shell git rev-parse --short HEAD)
+$(info GIT_HASH: $(GIT_HASH) )
 
 
 # define the C compiler to use
@@ -84,9 +86,9 @@ ifeq ($(AQ_MEMCMP), true)
 endif
 
 # Put all flags together.
-CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS)
+CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
 
 # Other sources.
 #DBG_SRC = debug_timer.c
