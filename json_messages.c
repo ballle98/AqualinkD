@@ -435,7 +435,7 @@ int build_aqualink_status_JSON(struct aqualinkdata *aqdata, char* buffer, int si
   length += sprintf(buffer+length, ",\"status\":\"%s\"",getStatus(aqdata) );
   //length += sprintf(buffer+length, ",\"message\":\"%s\"",aqdata->message );
   length += sprintf(buffer+length, ",\"version\":\"%s\"",aqdata->version );//8157 REV MMM",
-  length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s\"", AQUALINKD_VERSION ); //1.0b,
+  length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s (rev %s)\"", AQUALINKD_VERSION, GIT_HASH); //1.0b,
   length += sprintf(buffer+length, ",\"date\":\"%s\"",aqdata->date );//"09/01/16 THU",
   length += sprintf(buffer+length, ",\"time\":\"%s\"",aqdata->time );//"1:16 PM",
   //length += sprintf(buffer+length, ",\"air_temp\":\"%d\"",aqdata->air_temp );//"96",

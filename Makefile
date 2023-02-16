@@ -22,6 +22,8 @@ $(info OS: $(PI_OS_VERSION) )
 GLIBC_VERSION = $(shell ldd --version | grep ldd)
 $(info GLIBC: $(GLIBC_VERSION) )
 endif
+GIT_HASH = $(shell git rev-parse --short HEAD)
+$(info GIT_HASH: $(GIT_HASH) )
 
 # define the C compiler to use
 CC = gcc
@@ -82,9 +84,9 @@ ifeq ($(AQ_MEMCMP), true)
 endif
 
 # Put all flags together.
-CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS)
+CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
 
 # Other sources.
 #DBG_SRC = debug_timer.c
