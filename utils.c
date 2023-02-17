@@ -631,14 +631,14 @@ void _LOG(int16_t from, int msg_level,  char *message)
 #endif //AQ_MANAGER
 
   if (_daemonise == FALSE) {
+    struct timespec tspec;
+    struct tm localtm;
+    clock_gettime(CLOCK_REALTIME, &tspec);
+    char timeStr[TIMESTAMP_LENGTH];
+    strftime(timeStr, sizeof(timeStr), "%H:%M:%S", localtime_r(&tspec.tv_sec, &localtm));
     if (msg_level == LOG_ERR) {
-      fprintf(stderr, "%s", message);
+      fprintf(stderr, "%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
     } else {
-      struct timespec tspec;
-      struct tm localtm;
-      clock_gettime(CLOCK_REALTIME, &tspec);
-      char timeStr[TIMESTAMP_LENGTH];
-      strftime(timeStr, sizeof(timeStr), "%H:%M:%S", localtime_r(&tspec.tv_sec, &localtm));
       printf("%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
     }
   }
