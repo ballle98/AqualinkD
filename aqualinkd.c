@@ -639,7 +639,7 @@ void _processMessage(char *message, bool reset)
   else if ( (strncasecmp(msg, "BOOST POOL", 10) == 0) && (strcasestr(msg, "REMAINING") != NULL) ) {
     // Ignore messages if in programming mode.  We get one of these turning off for some strange reason.
     if (in_programming_mode(&_aqualink_data) == false) {
-      snprintf(_aqualink_data.boost_msg, 6, &msg[11]);
+      snprintf(_aqualink_data.boost_msg, 6, "%s", &msg[11]);
       _aqualink_data.boost = true;
       msg_loop |= MSG_BOOST;
       msg_loop |= MSG_SWG;
