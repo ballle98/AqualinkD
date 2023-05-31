@@ -143,5 +143,6 @@ bool push_aq_cmd(unsigned char cmd);
 void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, program_type type);
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl);
 bool waitForMessage(struct aqualinkdata *aq_data, char* message, int numMessageReceived);
+void force_queue_delete();
 
 #endif

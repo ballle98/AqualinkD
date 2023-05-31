@@ -9347,7 +9347,7 @@ static void mg_do_ssi_include(struct mg_connection *nc, struct http_message *hm,
    */
   if (sscanf(tag, " virtual=\"%[^\"]\"", file_name) == 1) {
     /* File name is relative to the webserver root */
-    snprintf(path, sizeof(path), "%s/%s", opts->document_root, file_name);
+    snprintf(path, sizeof(path), "%.3070s/%.1024s", opts->document_root, file_name);
   } else if (sscanf(tag, " abspath=\"%[^\"]\"", file_name) == 1) {
     /*
      * File name is relative to the webserver working directory
