@@ -139,7 +139,6 @@ int RPM_check(pump_type type, int value, struct aqualinkdata *aqdata);
 //int RPM_check(int type, int value, struct aqualinkdata *aqdata);
 const char *ptypeName(program_type type);
 const char *programtypeDisplayName(program_type type);
-
-
+void force_queue_delete();
 
 #endif
