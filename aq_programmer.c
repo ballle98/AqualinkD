@@ -782,7 +782,7 @@ void _aq_programmer(program_type r_type, char *args, struct aqualinkdata *aq_dat
     type = r_type;
   }
 
-  LOG(PROG_LOG, LOG_NOTICE, "Starting programming thread '%s'\n",ptypeName(type));
+  LOG(PROG_LOG, LOG_INFO, "Starting programming thread '%s'\n",ptypeName(type));
 
   programmingthread->aq_data = aq_data;
   programmingthread->thread_id = 0;
