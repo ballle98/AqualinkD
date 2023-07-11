@@ -695,12 +695,7 @@ void *set_aqualink_PDA_init( void *ptr )
     //printf("****** Version '%s' ********\n",aq_data->version);
     LOG(PDA_LOG,LOG_DEBUG, "PDA type=%d, version=%s\n", _PDA_Type, aq_data->version);
     // don't wait for version menu to time out press back to get to home menu faster
-    //send_cmd(KEY_PDA_BACK);
-    //if (! waitForPDAnextMenu(aq_data)) { // waitForPDAnextMenu waits for highlight chars, which we don't get on normal menu
-    // :TODO: perhaps get rid of this and restore KEY_PDA_BACK
-    if (! waitForPDAMessageType(aq_data,CMD_PDA_CLEAR, 2, 0)) {
-        LOG(PDA_LOG,LOG_ERR, "PDA Init :- wait for next menu failed\n");
-    }
+    send_cmd(KEY_PDA_BACK);
   }
   else {
     LOG(PDA_LOG,LOG_ERR, "PDA Init :- should be called when on FW VERSION menu.\n");

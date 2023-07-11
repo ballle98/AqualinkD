@@ -597,7 +597,9 @@ void kick_aq_program_thread(struct aqualinkdata *aq_data, emulation_type source_
     }
 #ifdef AQ_PDA
     else if (source_type == AQUAPDA && !in_ot_programming_mode(aq_data)) {
-      LOG(PDA_LOG, LOG_DEBUG, "Kicking PDA thread %d,%p\n",aq_data->active_thread.ptype, aq_data->active_thread.thread_id);
+      LOG(PDA_LOG, LOG_DEBUG, "Kicking PDA thread %s(%d),%p\n",
+          ptypeName(aq_data->active_thread.ptype), aq_data->active_thread.ptype,
+          aq_data->active_thread.thread_id);
       pthread_cond_broadcast(&aq_data->active_thread.thread_cond);  
     }
 #endif     
@@ -2223,7 +2225,8 @@ bool send_cmd(unsigned char cmd)
         }
     }
   if (ret) {
-      LOG(PROG_LOG, LOG_INFO, "sent '0x%02hhx' to controller\n", cmd);
+      LOG(PROG_LOG, LOG_INFO, "sent %s '0x%02hhx' to controller\n",
+          cmd_to_string(cmd), cmd);
   }
   pthread_mutex_unlock(&_pgm_command_mutex);
   return ret;
