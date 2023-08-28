@@ -116,9 +116,9 @@ void init_parameters (struct aqconfig * parms)
 #endif
 #ifdef AQ_PDA
   parms->pda_sleep_mode = false;
+  parms->pda_sleep_with_websock = false;
 #endif
   //parms->onetouch_mode = false;
-  parms->pda_sleep_with_websock = true;
   parms->convert_mqtt_temp = true;
   parms->convert_dz_temp = true;
   parms->report_zero_pool_temp = false;

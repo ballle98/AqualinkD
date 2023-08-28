@@ -1284,6 +1284,7 @@ int startup(char *self, char *cfgFile)
   if (isPDA_PANEL) {
     LOG(AQUA_LOG,LOG_NOTICE, "Config PDA Mode          = %s\n", bool2text(isPDA_PANEL));
     LOG(AQUA_LOG,LOG_NOTICE, "Config PDA Sleep Mode    = %s\n", bool2text(_aqconfig_.pda_sleep_mode));
+    LOG(AQUA_LOG,LOG_NOTICE, "Config PDA Sleep w/ Web  = %s\n", bool2text(_aqconfig_.pda_sleep_with_websock));
   }
 #endif
   LOG(AQUA_LOG,LOG_NOTICE, "Config force SWG         = %s\n", bool2text(_aqconfig_.force_swg));
