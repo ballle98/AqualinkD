@@ -96,7 +96,7 @@ const char* get_packet_type(unsigned char* packet , int length)
       return "PDA Unknown";
     break;
     case CMD_PDA_0x1B:
-      return "PDA Init (*guess*)";
+      return "PDA Init (guess)";
     break;
     case CMD_PDA_HIGHLIGHT:
       return "PDA Hlight";
@@ -761,7 +761,7 @@ void send_packet(int fd, unsigned char *packet, int length)
   */
 
   // MAYBE Change this back to debug serial
-  LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial write %d bytes\n",length-2);
+  // LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial write %d bytes\n",length-2);
   //LOG(RSSD_LOG,LOG_DEBUG, "Serial write %d bytes, type 0x%02hhx cmd 0x%02hhx\n",length-2,packet[5],packet[6]);
   logPacketWrite(&packet[1], length-2);
 /*
@@ -1032,9 +1032,11 @@ int get_packet(int fd, unsigned char* packet)
     return AQSERR_2SMALL;
   }
 
-  LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial read %d bytes\n",index);
-  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL)
+  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL) {
     logPacketRead(packet, index);
+  } else {
+    LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial read %d bytes\n",index);
+  }
   // Return the packet length.
   return index;
 }

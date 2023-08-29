@@ -1853,9 +1853,8 @@ void main_loop()
 
       if (packet_length > 0 && packet_buffer[PKT_DEST] == _aqconfig_.device_id && getProtocolType(packet_buffer) == JANDY)
       {
-        if (getLogLevel(AQUA_LOG) >= LOG_DEBUG) {
-          LOG(AQUA_LOG,LOG_DEBUG, "RS received packet of type %s length %d\n", get_packet_type(packet_buffer, packet_length), packet_length);
-          logPacketRead(packet_buffer, packet_length);
+        if (getLogLevel(AQUA_LOG) == LOG_DEBUG) {
+          debuglogPacket(LOG_DEBUG, packet_buffer, packet_length, true);
         }
         
         if (!_aqconfig_.prioritize_ack) {
