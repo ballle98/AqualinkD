@@ -158,9 +158,9 @@ int _beautifyPacket(char *buff, unsigned char *packet_buffer, int packet_length,
 /*
   if (getProtocolType(packet_buffer)==PENTAIR) {
     // Listing Jandy below if redundant.  need to clean this up.
-    cnt = sprintf(buff, "%5.5s %s%8.8s Packet | HEX: ",(is_read?"Read":"Write"),(error?"BAD PACKET ":""),getProtocolType(packet_buffer)==PENTAIR?"Pentair":"Jandy");
+    cnt = sprintf(buff, "%5.5s %2d %s%8.8s Packet | HEX: ",(is_read?"Read":"Write"), packet_length, (error?"BAD PACKET ":""),getProtocolType(packet_buffer)==PENTAIR?"Pentair":"Jandy");
   } else {
-    cnt = sprintf(buff, "%5.5s %sTo 0x%02hhx of type %16.16s | HEX: ",(is_read?"Read":"Write"),(error?"BAD PACKET ":""), packet_buffer[PKT_DEST], get_packet_type(packet_buffer, packet_length));
+    cnt = sprintf(buff, "%5.5s %2d %sTo 0x%02hhx of type %16.16s | HEX: ",(is_read?"Read":"Write"), packet_length, (error?"BAD PACKET ":""), packet_buffer[PKT_DEST], get_packet_type(packet_buffer, packet_length));
   }
 */
   for (i = 0; i < packet_length; i++)
