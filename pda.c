@@ -316,6 +316,11 @@ void process_pda_packet_msg_long_home(const char *msg)
     else
     {
       _aqualink_data->aqbuttons[SPA_INDEX].led->state = OFF;
+      if ((stristr(pda_m_line(4), "POOL MODE") != NULL) &&
+          (pda_m_line(4)[AQ_MSGLEN - 1] == 'F'))
+        {
+          _aqualink_data->aqbuttons[PUMP_INDEX].led->state = OFF;
+        }
     }
   }
   else if (stristr(msg, "SPA HEATER") != NULL)
