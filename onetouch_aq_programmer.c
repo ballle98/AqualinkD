@@ -644,7 +644,7 @@ void set_aqualink_onetouch_heater_setpoint( struct aqualinkdata *aq_data, bool i
   int i;
   int len;
   //char *st;
-  unsigned char direction;
+  unsigned char direction = KEY_ONET_UP;
 
   if ( !goto_onetouch_menu(aq_data, OTM_SET_TEMP) ){
     LOG(ONET_LOG,LOG_ERR, "OneTouch device programmer failed to get heater temp menu\n");

@@ -933,23 +933,23 @@ bool set_PDA_numeric_field_value(struct aqualinkdata *aq_data, int val, int cur_
   }
 
   if (cur_val == -1) {
-    char *hghlight_chars;
-    int hlight_length=0;
+    char *hghlight_chars = NULL;
+    int hlight_length = 0;
     int i=0;
     //hghlight_chars = pda_m_hlightchars(&hlight_length);
     while (hlight_length >= 15 || hlight_length <= 0) {
-      delay(500);
+      //delay(500);
       waitForPDANextMessageType(aq_data,CMD_PDA_HIGHLIGHTCHARS, 1, 0);
       hghlight_chars = pda_m_hlightchars(&hlight_length);
-      LOG(PDA_LOG,LOG_DEBUG, "Numeric selector, highlight chars '%.*s'\n",hlight_length , hghlight_chars);
+      LOG(PDA_LOG,LOG_DEBUG, "Numeric selector, highlight chars '%.*s'\n", hlight_length, hghlight_chars);
       if (++i >= 20) {
-        LOG(PDA_LOG,LOG_ERR, "Numeric selector, didn't find highlight chars, current selection is '%.*s'\n",hlight_length , hghlight_chars);
+        LOG(PDA_LOG,LOG_ERR, "Numeric selector, didn't find highlight chars, current selection is '%.*s'\n", hlight_length, hghlight_chars);
         return false;
       }
     }
 
     cur_val = atoi(hghlight_chars);
-    LOG(PDA_LOG,LOG_DEBUG, "Numeric selector, highlight chars '%.*s', numeric value using %d\n",hlight_length , hghlight_chars, cur_val);
+    LOG(PDA_LOG,LOG_DEBUG, "Numeric selector, highlight chars '%.*s', numeric value using %d\n", hlight_length, hghlight_chars, cur_val);
   }
 
   if (val < cur_val) {
