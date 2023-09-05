@@ -813,7 +813,7 @@ bool process_pda_packet(unsigned char *packet, int length)
   int index = -1;
   static bool equiptment_update_loop = false;
   static bool read_equiptment_menu = false;
-
+  static bool first_status_after_clear = false;
 
   process_pda_menu_packet(packet, length, in_programming_mode(_aqualink_data));
 
@@ -830,25 +830,26 @@ bool process_pda_packet(unsigned char *packet, int length)
 
     case CMD_PDA_CLEAR:
       read_equiptment_menu = false; // Reset the have read menu flag, since this is new menu.
+      first_status_after_clear = true;
     break;
 
     case CMD_STATUS:
       _aqualink_data->last_display_message[0] = '\0';
       if (equiptment_update_loop == false && pda_m_type() == PM_EQUIPTMENT_STATUS)
       {
-        LOG(PDA_LOG,LOG_DEBUG, "**** PDA Start new Equiptment loop ****\n");
+        LOG(PDA_LOG,LOG_DEBUG, "**** PDA Start new Equipment loop ****\n");
         equiptment_update_loop = true;
         // Need to process the equiptment full MENU here
       }
       else if (read_equiptment_menu == false && equiptment_update_loop == true && pda_m_type() == PM_EQUIPTMENT_STATUS)
       {
-        LOG(PDA_LOG,LOG_DEBUG, "**** PDA read Equiptment page ****\n");
+        LOG(PDA_LOG,LOG_DEBUG, "**** PDA read Equipment page ****\n");
         log_pump_information();
         read_equiptment_menu = true;
       }
       else if (equiptment_update_loop == true && pda_m_type() != PM_EQUIPTMENT_STATUS)
       {
-        LOG(PDA_LOG,LOG_DEBUG, "**** PDA End Equiptment loop ****\n");
+        LOG(PDA_LOG,LOG_DEBUG, "**** PDA End Equipment loop ****\n");
         // Moved onto different MENU.  Probably need to update any pump changes
         equiptment_update_loop = false;
 
@@ -865,6 +866,12 @@ bool process_pda_packet(unsigned char *packet, int length)
         //printf("**** PDA INIT PUT BACK IN ****\n");
         queueGetProgramData(AQUAPDA, _aqualink_data);
       }
+      else if (first_status_after_clear &&
+          (pda_m_type() == PM_FREEZE_PROTECT_DEVICES))
+      {
+        process_pda_freeze_protect_devices();
+      }
+      first_status_after_clear = false;
     break;
 
     case CMD_MSG_LONG:
