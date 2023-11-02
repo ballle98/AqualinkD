@@ -1312,7 +1312,8 @@ void action_mqtt_message(struct mg_connection *nc, struct mg_mqtt_message *msg) 
 
 
 float pass_mg_body(struct mg_str *body) {
-  LOG(NET_LOG,LOG_INFO, "Message body:'%.*s'\n", body->len, body->p);
+  int body_len = body->len & INT_MAX;
+  LOG(NET_LOG,LOG_INFO, "Message body:'%.*s'\n", body_len, body->p);
   // Quick n dirty pass value from either of below.
   // value=1.5&arg2=val2
   // {"value":"1.5"}
@@ -1353,10 +1354,12 @@ void action_web_request(struct mg_connection *nc, struct http_message *http_msg)
                                    // this log level before running all this
                                    // junk
     char *uri = (char *)malloc(http_msg->uri.len + http_msg->query_string.len + 2);
-    strncpy(uri, http_msg->uri.p, http_msg->uri.len + http_msg->query_string.len + 1);
-    uri[http_msg->uri.len + http_msg->query_string.len + 1] = '\0';
-    LOG(NET_LOG,LOG_INFO, "URI request: '%s'\n", uri);
-    free(uri);
+    if (uri != NULL) {
+        strncpy(uri, http_msg->uri.p, http_msg->uri.len + http_msg->query_string.len + 1);
+        uri[http_msg->uri.len + http_msg->query_string.len + 1] = '\0';
+        LOG(NET_LOG,LOG_INFO, "URI request: '%s'\n", uri);
+        free(uri);
+    }
   }
   //DEBUG_TIMER_STOP(tid, NET_LOG, "action_web_request debug print crap took"); 
 
