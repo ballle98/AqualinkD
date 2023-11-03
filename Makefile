@@ -131,7 +131,8 @@ DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
 
 # Other sources.
 DBG_SRC = $(SRCS) debug_timer.c
-SL_SRC = serial_logger.c aq_serial.c utils.c packetLogger.c rs_msg_utils.c
+SL_SRC = serial_logger.c aq_serial.c utils.c packetLogger.c rs_msg_utils.c \
+	timespec_subtract.c
 
 # Build durectories
 OBJ_DIR := ./build
