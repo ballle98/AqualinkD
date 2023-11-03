@@ -757,6 +757,10 @@ void send_packet(int fd, unsigned char *packet_buffer, int length)
 void send_packet(int fd, unsigned char *packet, int length)
 {
 #endif
+  // No spec for aqualink protocol but looking at similar RS-485 protocol
+  // https://www.tascam.eu/en/docs/MX-8A_RS-485_protocol.pdf there is a
+  // min frame to frame time of 4 milliseconds and there seems to be issues
+  // with RPi 4 sending a response too quickly
 
   struct timespec elapsed_time;
   struct timespec now;
