@@ -55,7 +55,7 @@ struct tmpPanelInfo {
   bool dual;
 };
 
-struct tmpPanelInfo *_tmpPanel;
+static struct tmpPanelInfo *_tmpPanel = NULL;
 
 /*
 * initialize data to default values
@@ -63,11 +63,12 @@ struct tmpPanelInfo *_tmpPanel;
 void init_parameters (struct aqconfig * parms)
 {
   // Set default panel if it get's missed from config
-  _tmpPanel = malloc(sizeof(struct tmpPanelInfo));
-  _tmpPanel->size = 8;
-  _tmpPanel->rs = true;
-  _tmpPanel->combo = true;
-  _tmpPanel->dual = false;
+  if ((_tmpPanel = malloc(sizeof(struct tmpPanelInfo))) != NULL) {
+    _tmpPanel->size = 8;
+    _tmpPanel->rs = true;
+    _tmpPanel->combo = true;
+    _tmpPanel->dual = false;
+  }
 
   clearDebugLogMask();
 
@@ -162,9 +163,10 @@ char *cleanalloc(char*str)
   char *result;
   str = cleanwhitespace(str);
   
-  result = (char*)malloc(strlen(str)+1);
-  strcpy ( result, str );
-  //printf("Result=%s\n",result);
+  if ((result = (char*)malloc(strlen(str)+1)) != NULL) {
+    strcpy ( result, str );
+    //printf("Result=%s\n",result);
+  }
   return result;
 }
 /*
@@ -407,25 +409,25 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
     //_config_parameters.onetouch_device_id != 0x00
     rtn=true;
 #endif
-  } else if (strncasecmp(param, "panel_type_size", 15) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "panel_type_size", 15) == 0)) {
     _tmpPanel->size = strtoul(value, NULL, 10);
     rtn=true;
-  } else if (strncasecmp(param, "panel_type_combo", 16) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "panel_type_combo", 16) == 0)) {
     _tmpPanel->combo = text2bool(value);
     rtn=true;
-  } else if (strncasecmp(param, "panel_type_dual", 15) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "panel_type_dual", 15) == 0)) {
     _tmpPanel->dual = text2bool(value);
     rtn=true;
-  } else if (strncasecmp(param, "panel_type_pda", 14) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "panel_type_pda", 14) == 0)) {
     _tmpPanel->rs = !text2bool(value);
     rtn=true;
-  } else if (strncasecmp(param, "panel_type_rs", 13) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "panel_type_rs", 13) == 0)) {
     _tmpPanel->rs = text2bool(value);
     rtn=true;
    } else if (strncasecmp(param, "panel_type", 10) == 0) { // This must be last so it doesn't get picked up by other settings
     setPanelByName(aqdata, cleanwhitespace(value));
     rtn=true;
-  } else if (strncasecmp(param, "rs_panel_size", 13) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "rs_panel_size", 13) == 0)) {
     LOG(AQUA_LOG,LOG_WARNING, "Config error, 'rs_panel_size' no longer supported, please use 'panel_type'\n");
     _tmpPanel->size = strtoul(value, NULL, 10);
     rtn=true;
@@ -510,7 +512,7 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
     _aqconfig_.override_freeze_protect = text2bool(value);
     rtn=true;
 #ifdef AQ_PDA
-  } else if (strncasecmp(param, "pda_mode", 8) == 0) {
+  } else if (_tmpPanel && (strncasecmp(param, "pda_mode", 8) == 0)) {
     LOG(AQUA_LOG,LOG_WARNING, "Config error, 'pda_mode' is no longer supported, please use rs_panel_type\n");
     //_aqconfig_.pda_mode = text2bool(value);
     //set_pda_mode(_aqconfig_.pda_mode);
@@ -649,9 +651,9 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
   } 
   else if (strncasecmp(param, "button_", 7) == 0) {
     // Check we have inichalized panel information, if not use any settings we may have
-    if (_aqconfig_.paneltype_mask == 0)
+    if (_tmpPanel && (_aqconfig_.paneltype_mask == 0)) {
       setPanel(aqdata, _tmpPanel->rs, _tmpPanel->size, _tmpPanel->combo, _tmpPanel->dual);
-
+    }
     int num = strtoul(param + 7, NULL, 10) - 1;
     if (num > TOTAL_BUTTONS) {
       LOG(AQUA_LOG,LOG_ERR, "Config error, button_%d is out of range\n",num+1);
@@ -671,9 +673,9 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value) {
 #endif
     } else if (strncasecmp(param + 9, "_lightMode", 10) == 0) {
       if (aqdata->num_lights < MAX_LIGHTS) {
-        int type = strtoul(value, NULL, 10);
+        unsigned long type = strtoul(value, NULL, 10);
         if (type < LC_PROGRAMABLE || type > NUMBER_LIGHT_COLOR_TYPES) {
-          LOG(AQUA_LOG,LOG_ERR, "Config error, unknown light mode '%s'\n",type);
+          LOG(AQUA_LOG,LOG_ERR, "Config error, unknown light mode '%lu'\n",type);
         } else {
           aqdata->lights[aqdata->num_lights].button = &aqdata->aqbuttons[num];
           aqdata->lights[aqdata->num_lights].lightType = type;
@@ -799,8 +801,6 @@ void read_config (struct aqualinkdata *aqdata, char *cfgFile)
   //int tokenindex = 0;
   char *b_ptr;
 
- 
-
   _aqconfig_.config_file = cleanalloc(cfgFile);
 
   if( (fp = fopen(cfgFile, "r")) != NULL){
@@ -817,7 +817,8 @@ void read_config (struct aqualinkdata *aqdata, char *cfgFile)
           if ( indx != NULL) 
           {
             if ( ! setConfigValue(aqdata, b_ptr, indx+1))
-              LOG(AQUA_LOG,LOG_ERR, "Unknown config parameter '%.*s'\n",strlen(b_ptr)-1, b_ptr);
+              LOG(AQUA_LOG,LOG_ERR, "Unknown config parameter '%.*s'\n",
+                  (int)(strlen(b_ptr)-1), b_ptr);
           } 
         }
       }
@@ -832,12 +833,8 @@ void read_config (struct aqualinkdata *aqdata, char *cfgFile)
   }
 
   free(_tmpPanel);
+  _tmpPanel = NULL;
 }
-
-
-
-
-
 
 //DEBUG_DERIAL, DEBUG, INFO, NOTICE, WARNING, ERROR
 char *errorlevel2text(int level) 

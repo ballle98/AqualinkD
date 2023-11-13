@@ -82,6 +82,10 @@ void start_timer(struct aqualinkdata *aq_data, /*aqkey *button,*/ int deviceInde
   }
 
   struct timerthread *tmthread = calloc(1, sizeof(struct timerthread));
+  if (tmthread == NULL) {
+    LOG(TIMR_LOG, LOG_ERR, "could not allocate memory for timer thread for button '%s'\n",button->name);
+    return;
+  }
   tmthread->aq_data = aq_data;
   tmthread->button = button;
   tmthread->deviceIndex = deviceIndex;
