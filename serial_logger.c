@@ -641,7 +641,7 @@ int _serial_logger(int rs_fd, char *port_name, int logPackets, int logLevel, boo
     LOG(RSSD_LOG, LOG_ERR, "Ran out of storage, some ID's were not captured, please increase SLOG_MAX and recompile\n");
 
   if (elapsed.tv_sec > 0) {
-    LOG(RSSD_LOG, LOG_NOTICE, "RS485 interface received %d packets in %d seconds (~%.2f Msg/Sec)\n", received_packets, elapsed.tv_sec, (received_packets / (float)elapsed.tv_sec) );
+    LOG(RSSD_LOG, LOG_NOTICE, "RS485 interface received %d packets in %ld seconds (~%.2f Msg/Sec)\n", received_packets, elapsed.tv_sec, (received_packets / (float)elapsed.tv_sec) );
   }
 
   LOG(RSSD_LOG, LOG_NOTICE, "Jandy Control Panel Model   : %s\n", _panelType);

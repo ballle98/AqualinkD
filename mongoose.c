@@ -8750,6 +8750,10 @@ void mg_register_http_endpoint_opt(struct mg_connection *nc,
 
   pd = mg_http_get_proto_data(nc);
   if (pd == NULL) pd = mg_http_create_proto_data(nc);
+  if (pd == NULL) {
+    free(new_ep);
+    return;
+  }
   new_ep->uri_pattern = mg_strdup(mg_mk_str(uri_path));
   if (opts.auth_domain != NULL && opts.auth_file != NULL) {
     new_ep->auth_domain = strdup(opts.auth_domain);
@@ -11539,6 +11543,9 @@ void mg_send_dns_query(struct mg_connection *nc, const char *name,
                        int query_type) {
   struct mg_dns_message *msg =
       (struct mg_dns_message *) MG_CALLOC(1, sizeof(*msg));
+  if (msg == NULL) {
+    goto cleanup;
+  }
   struct mbuf pkt;
   struct mg_dns_resource_record *rr = &msg->questions[0];
 

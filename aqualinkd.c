@@ -986,7 +986,7 @@ void action_delayed_request()
       }
       else
       {
-        LOG(AQUA_LOG,LOG_NOTICE, "SWG % is already %d, not changing\n", _aqualink_data.unactioned.value);
+        LOG(AQUA_LOG,LOG_NOTICE, "SWG %% is already %d, not changing\n", _aqualink_data.unactioned.value);
       }
     }
     // Let's just tell everyone we set it, before we actually did.  Makes homekit happy, and it will re-correct on error.

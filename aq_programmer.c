@@ -613,7 +613,7 @@ void aq_programmer(program_type r_type, char *args, struct aqualinkdata *aq_data
 void _aq_programmer(program_type r_type, char *args, struct aqualinkdata *aq_data, bool allowOveride)
 {
   struct programmingThreadCtrl *programmingthread = malloc(sizeof(struct programmingThreadCtrl));
-
+  if (programmingthread == NULL) return;
   
 /*
   Seemed like a good idea to use lookuptable, but need to figure out a way to check program_type actually exists in array,
@@ -1128,7 +1128,7 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
   struct timespec elapsed;
   clock_gettime(CLOCK_REALTIME, &threadCtrl->aq_data->last_active_time);
   timespec_subtract(&elapsed, &threadCtrl->aq_data->last_active_time, &threadCtrl->aq_data->start_active_time);
-  LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
+  LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished in %ld.%03ld sec\n",
              threadCtrl->aq_data->active_thread.ptype,
              threadCtrl->aq_data->active_thread.thread_id,
              ptypeName(threadCtrl->aq_data->active_thread.ptype),

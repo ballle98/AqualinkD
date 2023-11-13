@@ -1272,10 +1272,10 @@ void action_mqtt_message(struct mg_connection *nc, struct mg_mqtt_message *msg) 
   //LOG(NET_LOG,LOG_DEBUG, "MQTT: topic %.*s %.2f\n",msg->topic.len, msg->topic.p, atof(msg->payload.p));
   // If message doesn't end in set or increment we don't care about it.
   if (strncmp(&msg->topic.p[msg->topic.len -4], "/set", 4) != 0 && strncmp(&msg->topic.p[msg->topic.len -10], "/increment", 10) != 0) {
-    LOG(NET_LOG,LOG_DEBUG, "MQTT: Ignore %.*s %.*s\n",msg->topic.len, msg->topic.p, msg->payload.len, msg->payload.p);
+    LOG(NET_LOG,LOG_DEBUG, "MQTT: Ignore %.*s %.*s\n",(int)(msg->topic.len), msg->topic.p, (int)(msg->payload.len), msg->payload.p);
     return;
   }
-  LOG(NET_LOG,LOG_DEBUG, "MQTT: topic %.*s %.*s\n",msg->topic.len, msg->topic.p, msg->payload.len, msg->payload.p);
+  LOG(NET_LOG,LOG_DEBUG, "MQTT: topic %.*s %.*s\n",(int)(msg->topic.len), msg->topic.p, (int)(msg->payload.len), msg->payload.p);
 
   DEBUG_TIMER_START(&tid);
   //Need to do this in a better manor, but for present it's ok.
