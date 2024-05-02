@@ -56,11 +56,19 @@ bool pda_shouldSleep() {
   //LOG(PDA_LOG,LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
   struct timespec now;
   struct timespec elapsed;
+  static bool probeRecvdAfterActive = false;
+  static bool activate = false;
+
   // If aqualinkd was restarted and a probe has not been received force a sleep
   if (! _pda_first_probe_recvd) {
     return true;
   } else if (! _config_parameters->pda_sleep_mode) {
     return false;
+  }
+
+  if (activate) {
+    LOG(PDA_LOG,LOG_DEBUG, "PDA received probe after activate\n");
+    probeRecvdAfterActive = true;
   }
 
   // NSF NEED TO CHECK ACTIVE THREADS.
@@ -69,20 +77,36 @@ bool pda_shouldSleep() {
         ptypeName(_aqualink_data->active_thread.ptype),
         _aqualink_data->active_thread.ptype,
         _aqualink_data->active_thread.thread_id);
-    return false;
-  }
+    activate = true;
 
   // Last see if there are any open websockets. (don't sleep if the web UI is open)
-  if ((! _config_parameters->pda_sleep_with_websock) &&
+  } else if ((! _config_parameters->pda_sleep_with_websock) &&
       ( _aqualink_data->open_websockets > 0 )) {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
-    return false;
+    activate = true;
+  } else {
+    clock_gettime(CLOCK_REALTIME, &now);
+    timespec_subtract(&elapsed, &now, &(_aqualink_data->last_active_time));
+    if (elapsed.tv_sec >= PDA_SLEEP_FOR) {
+      if (!activate) {
+        LOG(PDA_LOG,LOG_DEBUG, "PDA Slept for %ld sec\n", elapsed.tv_sec);
+      }
+      activate = true;
+    } else {
+      activate = false;
+      probeRecvdAfterActive = false;
+    }
   }
 
-  clock_gettime(CLOCK_REALTIME, &now);
-  timespec_subtract(&elapsed, &now, &(_aqualink_data->last_active_time));
-  if (elapsed.tv_sec > PDA_SLEEP_FOR) {
-    return false;
+  if (activate) {
+    if (probeRecvdAfterActive) {
+      return false;
+    } else {
+      LOG(PDA_LOG,LOG_DEBUG, "Wait for probe to activate\n");
+      probeRecvdAfterActive = false;
+      _pda_first_probe_recvd = false;
+      return true;
+    }
   }
 
   return true;
