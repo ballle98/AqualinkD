@@ -41,8 +41,8 @@ https://github.com/aqualinkd/AqualinkD/wiki
 For detailed release notes and version history, see [RELEASE.md](RELEASE.md)
 
 ---
+<!--
 ### AqualinkD built in WEB Interface(s).
-
 <table width="100%" border="0" cellpadding="20px">
  <tr><th width="50%">Default web interface</th><th wifth="50%">Simple web interface</img></th><tr>
  <tr><td><img src="extras/IMG_0251.PNG?raw=true" width="350"></img></td><td><img src="extras/simple.png?raw=true" width="350"</img></td></td></td>
@@ -68,6 +68,26 @@ For detailed release notes and version history, see [RELEASE.md](RELEASE.md)
    <img src="extras/web_ui2.png?raw=true" width="800">
    </td></tr>
  </table>
+-->
+### AqualinkD built in WEB Interface(s).
+
+#### In Phone
+<img src="extras/IMG_0251.PNG?raw=true" width="350">
+
+<ul>
+  <li>When the web page is loaded in a mobile device browser, you can <b>save to desktop</b> and an mobile app will be created for you.</li>
+  <li>The order and options shown are configurable for your individual needs and/or preferences.</li>
+</ul>
+
+#### In web browser/tablet
+<img src="extras/web_ui2.png?raw=true" width="800">
+
+<ul>
+  <li>The layout and functionality are from the Apple HomeKit interface.  This works in any browser or on any mobile device.</li>
+  <li>Customizable tile icons & background images. (Tiles not used can be hidden).</li>
+  <li>Thermostat, Switch, SWG & Light tiles have more options (ie: setting heater temperature, timers, variable speed pump RPM/GPM, salt generating percentage and light mode etc). These options are accessible by pressing and holding the tile icon.</li>
+  <li>Supports live background images (ie: poll camera for still image every X seconds).</li>
+</ul>
 
 ### Simulators
 Designed to mimic AqualinkRS devices, used to fully configure the master control panel<br>
