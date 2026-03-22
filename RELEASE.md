@@ -4,10 +4,13 @@ All notable changes to AqualinkD are documented here. Releases are listed in rev
 
 ---
 
-## Release 3.0.3 (Development - January 2026)
+## Release 3.0.3 (Development - March 2026)
 * Fixed setting SWG for PDA v1.2
 * Fixed bug with slider run times in web UI
 * Fixed bug with heater max min in web UI
+* Added light_programming_iaqualink_delay to delay aqualink protocol while light is being programmed, some users have encountered panel slowing down while light is being programmed through iAqualink.
+* Increased allowed length of sensor labels.
+* Minor updates to MQTT discovery protocol.
 
 ---
 

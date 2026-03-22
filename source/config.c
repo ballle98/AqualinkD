@@ -1286,7 +1286,8 @@ if (strlen(cleanwhitespace(value)) <= 0) {
       }
       sprintf(aqdata->sensors[num].ID, "Aux_S%d", num+1);
       if (strncasecmp(param + 9, "_label", 6) == 0) {
-        aqdata->sensors[num].label = ncleanalloc(value, AQ_MSGLEN);
+        //aqdata->sensors[num].label = ncleanalloc(value, AQ_MSGLEN);
+        aqdata->sensors[num].label = cleanalloc(value);
         rtn=true;
       } else if (strncasecmp(param + 9, "_path", 5) == 0) {
         aqdata->sensors[num].path = cleanalloc(value);

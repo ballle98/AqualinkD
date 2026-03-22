@@ -229,7 +229,7 @@ const char *HASSIO_TEMP_SENSOR_DISCOVER = "{"
     "\"type\": \"sensor\","
     "\"state_class\": \"measurement\","
     "\"unique_id\": \"aqualinkd_%s_temp\","
-    "\"name\": \"%s Temp\","
+    "\"name\": \"%s\","
     "\"state_topic\": \"%s/%s\","
     "\"value_template\": \"{{ value_json }}\","
     "\"unit_of_measurement\": \"%s\","
@@ -594,15 +594,15 @@ void publish_mqtt_discovery(struct aqualinkdata *aqdata, struct mg_connection *n
   }
 
   // Temperatures
-  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Pool","Pool",_aqconfig_.mqtt_aq_topic,POOL_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:water-thermometer");
+  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Pool","Pool Temperature",_aqconfig_.mqtt_aq_topic,POOL_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:water-thermometer");
   sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, "Pool");
   send_mqtt(nc, topic, msg);
 
-  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Spa","Spa",_aqconfig_.mqtt_aq_topic,SPA_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:water-thermometer");
+  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Spa","Spa Temperature",_aqconfig_.mqtt_aq_topic,SPA_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:water-thermometer");
   sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, "Spa");
   send_mqtt(nc, topic, msg);
 
-  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Air","Air",_aqconfig_.mqtt_aq_topic,AIR_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:thermometer");
+  sprintf(msg, HASSIO_TEMP_SENSOR_DISCOVER,connections,_aqconfig_.mqtt_aq_topic,"Air","Air Temperature",_aqconfig_.mqtt_aq_topic,AIR_TEMP_TOPIC,(_aqconfig_.convert_mqtt_temp?"°C":"°F"),"mdi:thermometer");
   sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, "Air");
   send_mqtt(nc, topic, msg);
   
