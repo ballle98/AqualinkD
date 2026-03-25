@@ -2008,7 +2008,7 @@ void check_print_config (struct aqualinkdata *aqdata)
       sprintf(ext,"%-12s|", ((altlabel_detail *)aqdata->aqbuttons[i].special_mask_ptr)->altlabel);
     }
 
-    LOG(AQUA_LOG,LOG_NOTICE, "Button %-13s = label %-15s | %s\n", 
+    LOG(AQUA_LOG,LOG_NOTICE, "Button %-13s = label %-15.15s | %s\n", 
                            aqdata->aqbuttons[i].name, aqdata->aqbuttons[i].label, ext);  
     
 
@@ -2025,7 +2025,7 @@ void check_print_config (struct aqualinkdata *aqdata)
   for (i = 0; i < aqdata->num_sensors; i++)
   {
     //LOG(AQUA_LOG,LOG_NOTICE, "Sensor %-13s = label %-15s | %s\n", aqdata->sensors[i].ID, aqdata->sensors[i].label,aqdata->sensors[i].path);
-    LOG(AQUA_LOG,LOG_NOTICE, "Sensor %-13s = label %-15s | %s | %s%s %s\n", 
+    LOG(AQUA_LOG,LOG_NOTICE, "Sensor %-13s = label %-15.15s | %s | %s%s %s\n", 
          aqdata->sensors[i].ID, 
          aqdata->sensors[i].label,
          aqdata->sensors[i].path,

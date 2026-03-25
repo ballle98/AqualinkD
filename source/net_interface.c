@@ -163,6 +163,7 @@ end:
 }
 
 
+
 /* In future maybe remove mqtt_id from aq_config and use static here */
 char *generate_mqtt_id() {
   static char ID[MQTT_ID_LEN+1];
@@ -178,7 +179,7 @@ char *generate_mqtt_id() {
     if (i < MQTT_ID_LEN) {
       ID[i++] = '_';
       const net_iface *info = get_first_valid_interface();
-      if (info->rawmac[0] != '\0')
+      if (info != NULL && info->rawmac[0] != '\0')
         sprintf(&ID[i], "%.*s", (MQTT_ID_LEN-i), info->rawmac);
       else
         sprintf(&ID[i], "%.*d", (MQTT_ID_LEN-i), getpid());

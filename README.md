@@ -161,6 +161,9 @@ when serial port is wrong, can't edit config.
 -->
 
 
+## Release 3.0.4 (Development)
+* Fixed AqualinkD not starting when IP not assigned and MQTT enabled.
+
 ## Updates in 3.0.3
 * Fixed setting SWG for PDA v1.2
 * Fixed bug with slider run times in web UI

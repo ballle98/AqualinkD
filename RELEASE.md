@@ -5,6 +5,11 @@ All notable changes to AqualinkD are documented here. Releases are listed in rev
 ---
 
 ## Release 3.0.3 (Development - March 2026)
+* Fixed AqualinkD not starting when IP not assigned and MQTT enabled.
+
+---
+
+## Release 3.0.3 (Development - March 2026)
 * Fixed setting SWG for PDA v1.2
 * Fixed bug with slider run times in web UI
 * Fixed bug with heater max min in web UI
