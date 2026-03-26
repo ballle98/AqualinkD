@@ -829,6 +829,9 @@
   }
 
   function addConfigRow(hideLineSeperator, data, obj, row = -1, deletable = false) {
+    
+    //console.log("addConfigRow "+ JSON.stringify(data, null, 2));
+
     const configtable = document.getElementById("config_table");
     const newRow = configtable.insertRow(row);
     /*
@@ -856,7 +859,6 @@
     var input;
     if(data[obj]["valid values"] !== undefined) {
       //console.log(data[obj]["valid values"]);
-      //const 
       input = document.createElement("select");
       const array = data[obj]["valid values"];
       for(var i = 0; i < array.length; i++) {
@@ -1281,8 +1283,8 @@
             break;
           case "pumpType":
             js.type = "string";
-            //let validvalues = ["BLANK", "JANDY ePUMP", "Pentair VS", "Pentair VF"];
-            //js['valid values'] = validvalues;
+            let validvalues = ["", "JANDY ePUMP", "Pentair VS", "Pentair VF"];
+            js['valid values'] = validvalues;
             break;
           case "pumpName":
           case "altLabel":
@@ -1294,6 +1296,7 @@
         break;
       }
     }
+ 
     const configtable = document.getElementById("config_table");
     for(let i = 0; i < configtable.rows.length; i++) {
       if(configtable.rows[i].cells[0].getAttribute('button_key') !== null) {

@@ -161,8 +161,9 @@ when serial port is wrong, can't edit config.
 -->
 
 
-## Release 3.0.4 (Development)
+## Release 3.0.4 (March 2026)
 * Fixed AqualinkD not starting when IP not assigned and MQTT enabled.
+* Fixed aqmanager config editor issue when adding pumpType. 
 
 ## Updates in 3.0.3
 * Fixed setting SWG for PDA v1.2
