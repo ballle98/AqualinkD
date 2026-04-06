@@ -160,6 +160,8 @@ Need to look at sub panel (combined panels)
 when serial port is wrong, can't edit config.
 -->
 
+## Release 3.0.5 (dev)
+* added device power to watts in MQTT discovery for power monitoring
 
 ## Release 3.0.4 (March 2026)
 * Fixed AqualinkD not starting when IP not assigned and MQTT enabled.

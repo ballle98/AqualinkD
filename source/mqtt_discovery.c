@@ -289,6 +289,20 @@ const char *HASSIO_PUMP_SENSOR_DISCOVER = "{"
     "\"icon\": \"mdi:pump\""
 "}";
 
+const char *HASSIO_PUMP_WATT_DISCOVER = "{"
+    "\"device\": {" HASS_DEVICE "},"
+    "\"availability\": {" HASS_AVAILABILITY "},"
+    "\"type\": \"sensor\","
+    "\"state_class\": \"measurement\","
+    "\"unique_id\": \"aqualinkd_%s%d_%s\","
+    "\"name\": \"%s %s %s\","
+    "\"state_topic\": \"%s/%s%s\","
+    "\"value_template\": \"{{ value_json }}\","
+    "\"device_class\": \"power\","
+    "\"unit_of_measurement\": \"W\","
+    "\"icon\": \"mdi:pump\""
+"}";
+
 const char *HASSIO_BATTERY_SENSOR_DISCOVER = "{"
     "\"device\": {" HASS_DEVICE "},"
     "\"availability\": {" HASS_AVAILABILITY "},"
@@ -692,13 +706,21 @@ void publish_mqtt_discovery(struct aqualinkdata *aqdata, struct mg_connection *n
     sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s%d_%s/config", _aqconfig_.mqtt_discovery_topic, "Pump",pn,"RPM");
     send_mqtt(nc, topic, msg);
 
-     sprintf(msg, HASSIO_PUMP_SENSOR_DISCOVER,
+    /*
+    sprintf(msg, HASSIO_PUMP_SENSOR_DISCOVER,
               connections,
               _aqconfig_.mqtt_aq_topic,
               "Pump",pn,"Watts",
               aqdata->pumps[i].button->label,(rsm_strncasestr(aqdata->pumps[i].button->label,"pump",strlen(aqdata->pumps[i].button->label))!=NULL)?"":"Pump","Watts",
               _aqconfig_.mqtt_aq_topic,aqdata->pumps[i].button->name ,PUMP_WATTS_TOPIC,
-              "W");
+              "W");*/
+    sprintf(msg, HASSIO_PUMP_WATT_DISCOVER,
+              connections,
+              _aqconfig_.mqtt_aq_topic,
+              "Pump",pn,"Watts",
+              aqdata->pumps[i].button->label,(rsm_strncasestr(aqdata->pumps[i].button->label,"pump",strlen(aqdata->pumps[i].button->label))!=NULL)?"":"Pump","Watts",
+              _aqconfig_.mqtt_aq_topic,aqdata->pumps[i].button->name ,PUMP_WATTS_TOPIC);
+              
     sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s%d_%s/config", _aqconfig_.mqtt_discovery_topic, "Pump",pn,"Watts");
     send_mqtt(nc, topic, msg);
   }

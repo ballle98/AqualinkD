@@ -56,7 +56,9 @@
     "tile_icon_background_color_cool": "rgb(4, 159, 248)",
     "tile_icon_background_color_enabled": "rgb(78, 196, 0)",
     "tile_icon_background_color_disabled": "rgb(110, 110, 110)",
-    "tile_off_opacity": "0.90"
+    "tile_off_opacity": "0.90",
+    "csinputcell_background": "#555555",
+    "options_button_background": "#555555"
   },
   "devices": {
     "Filter_Pump": {
