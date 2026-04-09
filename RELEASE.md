@@ -4,6 +4,14 @@ All notable changes to AqualinkD are documented here. Releases are listed in rev
 
 ---
 
+## Release 3.1.0 (April 2026)
+* added device power to watts in MQTT discovery for power monitoring
+* Updated timers to be finer grained, (seconds vs minutes). - ie support for dosing pumps.
+* Added config options for button (circuit) runtimes to set default runtimes for a device.
+* Added support for onetouch macro's to OneTouch protocol.
+
+---
+
 ## Release 3.0.4 (March 2026)
 * Fixed AqualinkD not starting when IP not assigned and MQTT enabled.
 * Fixed aqmanager config editor issue when adding pumpType. 

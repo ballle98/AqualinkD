@@ -955,8 +955,8 @@
     //  }
     //  key = 1
     //}
-    const buttonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode"];
-    const virtButtonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode", "onetouchID", "altLabel"];
+    const buttonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode", "runtime"];
+    const virtButtonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode", "runtime", "onetouchID", "altLabel"];
     const configtable = document.getElementById("config_table");
     const newRow = configtable.insertRow();
     var cell1 = newRow.insertCell();
@@ -1036,7 +1036,7 @@
       _addedBlankVirtualButton = true;
       return;
     }
-    const virtButtonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode", "onetouchID", "altLabel"];
+    const virtButtonTypelist = ["pumpIndex", "pumpID", "pumpType", "pumpName", "pumpMaxSpeed", "pumpMinSpeed", "lightMode", "runtime", "onetouchID", "altLabel"];
     const configtable = document.getElementById("config_table");
     const vbname = "virtual_button_" + String(num).padStart(2, '0');
     const vblabel = vbname + "_label";
@@ -1156,6 +1156,8 @@
     } else if(deleted && key.startsWith("light_program_")) {
       //console.log(key.slice(0, 9));
       delete _config[key];
+    } else {
+      //console.log("delete - Unknown delete option " + key);
     }
     if(rebuild) {
       resetConfig(null);
@@ -1288,6 +1290,7 @@
             break;
           case "pumpName":
           case "altLabel":
+          case "runtime":
             js.type = "string";
             break;
         }

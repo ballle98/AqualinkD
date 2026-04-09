@@ -100,6 +100,7 @@ const func_ptr _prog_functions[AQP_RSSADAPTER_MAX] = {
      [AQ_SET_IAQTOUCH_PUMP_VS_PROGRAM] = set_aqualink_iaqtouch_pump_vs_program, 
      [AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE] = set_aqualink_iaqtouch_light_colormode,
      [AQ_SET_IAQTOUCH_DEVICE_ON_OFF]   = set_aqualink_iaqtouch_device_on_off,
+     [AQ_SET_ONETOUCH_MACRO]           = set_aqualink_onetouch_macro,
      //[AQ_SET_IAQTOUCH_ONETOUCH_ON_OFF] = set_aqualink_iaqtouch_onetouch_on_off,  // Not finished and not needed
      [AQ_PDA_INIT]                     = set_aqualink_PDA_init, 
      [AQ_PDA_WAKE_INIT]                = set_aqualink_PDA_wakeinit, 
@@ -734,7 +735,7 @@ void _aq_programmer_(program_type r_type, char *args, aqkey *button, int value, 
       return; // No need to create this as thread.
       break;
     default:
-      // Should check that _prog_functions[type] is valid.
+      // NSF REALLY Should check that _prog_functions[type] is valid.
       if( pthread_create( &programmingthread->thread_id , NULL ,  _prog_functions[type], (void*)programmingthread) < 0) {
         LOG(PROG_LOG, LOG_ERR, "could not create thread\n");
         return;

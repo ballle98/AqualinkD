@@ -188,7 +188,7 @@ typedef enum pump_type {
   PT_UNKNOWN = -1,
   EPUMP,           // = ePump AC & Jandy ePUMP
   VSPUMP,          // = Intelliflo VS
-  VFPUMP           // = Intelliflo VF  (GPM)
+  VFPUMP,          // = Intelliflo VF  (GPM)
 } pump_type;
 
 

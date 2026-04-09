@@ -1406,11 +1406,11 @@ uriAtype action_URI(request_source from, const char *URI, int uri_length, float 
     if ( strncasecmp(ri2, "ORP", 3) == 0 ) {
       SET_IF_CHANGED(_aqualink_data->orp, round(value), _aqualink_data->is_dirty);
       rtn = uActioned;
-      LOG(NET_LOG,LOG_NOTICE, "%s: request to set ORP to %d\n",actionName[from],_aqualink_data->orp);
+      LOG(NET_LOG,LOG_INFO, "%s: request to set ORP to %d\n",actionName[from],_aqualink_data->orp);
     } else if ( strncasecmp(ri2, "Ph", 2) == 0 ) {
       SET_IF_CHANGED(_aqualink_data->ph, value, _aqualink_data->is_dirty);
       rtn = uActioned;
-      LOG(NET_LOG,LOG_NOTICE, "%s: request to set Ph to %.2f\n",actionName[from],_aqualink_data->ph);
+      LOG(NET_LOG,LOG_INFO, "%s: request to set Ph to %.2f\n",actionName[from],_aqualink_data->ph);
     } else {
       LOG(NET_LOG,LOG_WARNING,"%s: ignoring, unknown URI %.*s\n",actionName[from],uri_length,URI);
       rtn = uBad;
@@ -1424,12 +1424,11 @@ uriAtype action_URI(request_source from, const char *URI, int uri_length, float 
     //bool istimer = false;
     action_type atype = ON_OFF;
     //int timer=0;
-    if (strncasecmp(ri2, "timer", 5) == 0) {
-      //istimer = true;
-      atype = TIMER;
-      //timer = value; // Save off timer
-      //value = 1; // Make sure we turn device on if timer.
-    } else if ( value > 1 || value < 0) {
+    if (strncasecmp(ri2, "timer_sec", 9) == 0) {
+      atype = TIMER_SEC;
+    } else if (strncasecmp(ri2, "timer", 5) == 0) {
+      atype = TIMER; 
+    }else if ( value > 1 || value < 0) {
       LOG(NET_LOG,LOG_WARNING, "%s: URI %s has invalid value %.2f\n",actionName[from], URI, value);
       *rtnmsg = INVALID_VALUE;
       rtn = uBad;

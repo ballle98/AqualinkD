@@ -262,6 +262,41 @@ bool goto_onetouch_system_menu(struct aqualinkdata *aqdata)
   return true;
 }
 
+bool goto_onetouch_macros_menu(struct aqualinkdata *aqdata)
+{
+
+  for(int i=0; i < 4; i++) {
+     
+    if (get_onetouch_menu_type() == OTM_ONETOUCH) {
+      return true;
+    }
+
+    if (get_onetouch_menu_type() == OTM_SYSTEM) {
+      select_onetouch_menu_item(aqdata, "ONETOUCH  ON/OFF");
+      waitfor_ot_queue2empty();
+      //LOG(ONET_LOG,LOG_DEBUG, "goto_onetouch_macros_menu queue empty\n");
+      waitForNextOT_Menu(aqdata);
+      //LOG(ONET_LOG,LOG_DEBUG, "goto_onetouch_macros_menu next menu\n");
+      //waitForOT_MessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHT,15);
+      //LOG(ONET_LOG,LOG_DEBUG, "goto_onetouch_macros_menu CMD_PDA_HIGHLIGHT\n");
+      //delay(500);
+      //LOG(ONET_LOG,LOG_DEBUG, "goto_onetouch_macros_menu delay\n");
+      //waitForOT_MessageTypes(aqdata,CMD_PDA_CLEAR,CMD_PDA_HIGHLIGHTCHARS,15);
+      //waitForOT_MessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHT,15);
+      //waitForOT_MessageType(aqdata,CMD_PDA_HIGHLIGHT,CMD_PDA_0x04,10);
+    } else if (get_onetouch_menu_type() != OTM_ONETOUCH){
+      send_ot_cmd(KEY_ONET_BACK);
+      waitfor_ot_queue2empty();
+      waitForNextOT_Menu(aqdata);
+    }
+
+  }
+
+  LOG(ONET_LOG,LOG_ERR, "OneTouch device programmer couldn't get to ONETOUCH menu\n");
+  return false;
+}
+
+
 bool goto_onetouch_menu(struct aqualinkdata *aqdata, ot_menu_type menu)
 {
   bool equErr = false;
@@ -269,6 +304,10 @@ bool goto_onetouch_menu(struct aqualinkdata *aqdata, ot_menu_type menu)
   char *third_menu = false;
 
   LOG(ONET_LOG,LOG_DEBUG, "OneTouch device programmer request for menu %d\n",menu);
+
+  if (menu == OTM_ONETOUCH){
+    return goto_onetouch_macros_menu(aqdata);
+  }
 
   if ( ! goto_onetouch_system_menu(aqdata) ) {
     LOG(ONET_LOG,LOG_ERR, "OneTouch device programmer failed to get system menu\n");
@@ -569,9 +608,10 @@ void *set_aqualink_onetouch_freezeprotect( void *ptr )
 
 void *set_aqualink_onetouch_macro( void *ptr )
 {
+  /*
   struct programmingThreadCtrl *threadCtrl;
   threadCtrl = (struct programmingThreadCtrl *) ptr;
-  //struct aqualinkdata *aqdata = threadCtrl->aqdata;
+  struct aqualinkdata *aqdata = threadCtrl->aqdata;
 
   //sprintf(msg, "%-5d%-5d",index, (strcmp(value, "on") == 0)?ON:OFF);
   // Use above to set
@@ -585,13 +625,58 @@ void *set_aqualink_onetouch_macro( void *ptr )
   unsigned int device = atoi(&buf[0]);
   unsigned int state = atoi(&buf[5]);
 #endif
+*/
+  struct programmingThreadCtrl *threadCtrl;
+  threadCtrl = (struct programmingThreadCtrl *) ptr;
+  struct aqualinkdata *aqdata = threadCtrl->aqdata;
+
+#ifdef NEW_AQ_PROGRAMMER
+  struct programmerArgs *pargs = &threadCtrl->pArgs;
+  aqkey *button = threadCtrl->pArgs.button;
+  int value = pargs->value;
+#else
+  //int val = atoi((char*)threadCtrl->thread_args);
+#endif
+
+  if (! isVBUTTON(button->special_mask)){
+    LOG(ONET_LOG,LOG_ERR, "OneTouch macro programmer only supports VBUTTON macros\n");
+    return ptr;
+  }
 
   waitForSingleThreadOrTerminate(threadCtrl, AQ_SET_ONETOUCH_MACRO);
   
   LOG(ONET_LOG,LOG_DEBUG, "OneTouch Marco\n");
 
-  LOG(ONET_LOG,LOG_ERR, "OneTouch Macro not implimented (device=%d|state=%d)\n",button->label,state);
+  //LOG(ONET_LOG,LOG_ERR, "OneTouch Macro not implimented (device=%d|state=%d)\n",button->label,state);
 
+  if ( !goto_onetouch_menu(aqdata, OTM_ONETOUCH) ){
+    LOG(ONET_LOG,LOG_ERR, "OneTouch device programmer failed to get heater temp menu\n");
+  }
+
+  // Check button is not= value. (don't do this before as the menu command above may change the state of the button)
+  if (button->led->state == value) {
+    LOG(ONET_LOG,LOG_DEBUG, "OneTouch Macro '%s' already in desired state, no change needed\n", button->label);
+    cleanAndTerminateThread(threadCtrl);
+    return ptr;
+  }
+
+  switch(button->rssd_code - 15) {
+    case 1:
+      send_ot_cmd(KEY_ONET_SELECT_1);
+      SET_IF_CHANGED(button->led->state, !button->led->state, aqdata->is_dirty);  
+      break;
+    case 2:
+      send_ot_cmd(KEY_ONET_SELECT_2);
+      SET_IF_CHANGED(button->led->state, !button->led->state, aqdata->is_dirty);  
+      break;
+    case 3:
+      send_ot_cmd(KEY_ONET_SELECT_3);
+      SET_IF_CHANGED(button->led->state, !button->led->state, aqdata->is_dirty) ;
+      break;
+    default:
+      LOG(ONET_LOG,LOG_ERR, "OneTouch Macro programmer only has 3 buttons OneTouchID %d is invalid\n",button->rssd_code - 15);
+  }
+    
   cleanAndTerminateThread(threadCtrl);
 
   // just stop compiler error, ptr is not valid as it's just been freed

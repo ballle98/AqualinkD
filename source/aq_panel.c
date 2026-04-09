@@ -1337,6 +1337,8 @@ const char* getActionName(action_type type)
     break;
     case TIMER:
       return "Timer";
+    case TIMER_SEC:
+      return "Timer (Seconds)";
     break;
     case LIGHT_MODE:
       return "Light Mode";
@@ -1451,7 +1453,13 @@ bool setDeviceState(struct aqualinkdata *aqdata, int deviceIndex, bool isON, req
   }
     
   LOG(PANL_LOG, LOG_INFO, "received '%s' for '%s', turning '%s'\n", (isON == false ? "OFF" : "ON"), button->name, (isON == false ? "OFF" : "ON"));
-#ifdef AQ_PDA
+
+  if ( button->runtime_sec > 0) {
+      LOG(PANL_LOG, LOG_INFO, "'%s' is has runtime %u seconds, setting timer\n", button->name, button->runtime_sec);
+      start_timer(aqdata, deviceIndex, 0, button->runtime_sec);
+  }
+
+  #ifdef AQ_PDA
   if (isPDA_PANEL) {
       if (button->special_mask & PROGRAM_LIGHT/* && isPDA_IAQT*/) {
         //if ( isPDA_IAQT && isIAQL_ACTIVE) {
@@ -1525,9 +1533,12 @@ bool setDeviceState(struct aqualinkdata *aqdata, int deviceIndex, bool isON, req
           } else {
             aq_programmer(AQ_SET_IAQTOUCH_DEVICE_ON_OFF, button, (isON == false ? OFF : ON), deviceIndex, aqdata);
             set_pre_state = false;
-          } 
+          }
+        } else if (isONET_ENABLED){
+          aq_programmer(AQ_SET_ONETOUCH_MACRO, button, (isON == false ? OFF : ON), deviceIndex, aqdata);
+          set_pre_state = false;
         } else {
-          LOG(PANL_LOG, LOG_ERR, "Can only use Aqualink Touch protocol for Virtual Buttons");
+          LOG(PANL_LOG, LOG_ERR, "Can only use Aqualink Touch for Virtual Buttons");
         }
     } else {
         // Everything else, simply send the button code.
@@ -1831,7 +1842,7 @@ bool panel_device_request(struct aqualinkdata *aqdata, action_type type, int dev
                           deviceIndex,
                           value,
                           getRequestName(source));
-  } else if (type == ON_OFF || type == TIMER || type == LIGHT_BRIGHTNESS || type == LIGHT_MODE){
+  } else if (type == ON_OFF || type == TIMER ||type == TIMER_SEC || type == LIGHT_BRIGHTNESS || type == LIGHT_MODE){
     LOG(PANL_LOG,LOG_INFO, "Device request type '%s' for deviceindex %d '%s' of value %d from '%s'\n",
                           getActionName(type),
                           deviceIndex,
@@ -1856,10 +1867,12 @@ bool panel_device_request(struct aqualinkdata *aqdata, action_type type, int dev
       }
     break;
     case TIMER:
-      //setDeviceState(&aqdata->aqbuttons[deviceIndex], true);
       setDeviceState(aqdata, deviceIndex, true, source);
-      //start_timer(aqdata, &aqdata->aqbuttons[deviceIndex], deviceIndex, value);
-      start_timer(aqdata, deviceIndex, value);
+      start_timer(aqdata, deviceIndex, value, 0);
+    break;
+    case TIMER_SEC:
+      setDeviceState(aqdata, deviceIndex, true, source);
+      start_timer(aqdata, deviceIndex, 0, value);
     break;
     case LIGHT_BRIGHTNESS:
       // Allow value=0 here (unlike LIGHT_MODE) since we could get multiple requests from a slider. (aka HomeKit)

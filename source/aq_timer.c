@@ -19,6 +19,7 @@ struct timerthread {
   int deviceIndex;
   struct aqualinkdata *aqdata;
   int duration_min;
+  u_int32_t duration_sec;
   struct timespec timeout;
   time_t started_at;
   struct timerthread *next;
@@ -57,7 +58,25 @@ int get_timer_left(aqkey *button)
   return 0;
 }
 
-void clear_timer(struct aqualinkdata *aqdata, /*aqkey *button,*/ int deviceIndex)
+uint32_t get_timer_left_sec(aqkey *button)
+{
+  struct timerthread *t_ptr = find_timerthread(button);
+
+  if (t_ptr != NULL) {
+    time_t now = time(0);
+    long total_duration_sec = (t_ptr->duration_min * 60) + t_ptr->duration_sec;
+    long elapsed_sec = (long)difftime(now, t_ptr->started_at);
+    if (elapsed_sec >= total_duration_sec) {
+        return 0;
+    }
+    
+    return (uint32_t)(total_duration_sec - elapsed_sec);
+  }
+
+  return 0;
+}
+
+void clear_timer(struct aqualinkdata *aqdata, int deviceIndex)
 {
   //struct timerthread *t_ptr = find_timerthread(button);
   struct timerthread *t_ptr = find_timerthread(&aqdata->aqbuttons[deviceIndex]);
@@ -65,18 +84,21 @@ void clear_timer(struct aqualinkdata *aqdata, /*aqkey *button,*/ int deviceIndex
   if (t_ptr != NULL) {
     LOG(TIMR_LOG, LOG_INFO, "Clearing timer for '%s'\n",t_ptr->button->name);
     t_ptr->duration_min = 0;
+    t_ptr->duration_sec = 0;
     pthread_cond_broadcast(&t_ptr->thread_cond);
   }
 }
 
-void start_timer(struct aqualinkdata *aqdata, /*aqkey *button,*/ int deviceIndex, int duration)
+
+void start_timer(struct aqualinkdata *aqdata, int deviceIndex, int duration_min, u_int32_t duration_sec)
 {
   aqkey *button = &aqdata->aqbuttons[deviceIndex];
   struct timerthread *t_ptr = find_timerthread(button);
 
   if (t_ptr != NULL) {
     LOG(TIMR_LOG, LOG_INFO, "Timer already active for '%s', resetting\n",t_ptr->button->name);
-    t_ptr->duration_min = duration;
+    t_ptr->duration_min = duration_min;
+    t_ptr->duration_sec = duration_sec;
     pthread_cond_broadcast(&t_ptr->thread_cond);
     return;
   }
@@ -86,7 +108,8 @@ void start_timer(struct aqualinkdata *aqdata, /*aqkey *button,*/ int deviceIndex
   tmthread->button = button;
   tmthread->deviceIndex = deviceIndex;
   tmthread->thread_id = 0;
-  tmthread->duration_min = duration;
+  tmthread->duration_min = duration_min;
+  tmthread->duration_sec = duration_sec;
   tmthread->next = NULL;
   tmthread->started_at = time(0); // This will get reset once we actually start. But need it here incase someone calls get_timer_left() before we start
 
@@ -158,8 +181,9 @@ void *timer_worker( void *ptr )
     }
   }
 
+  /*
+  // Wait the entire duration.
   pthread_mutex_lock(&tmthread->thread_mutex);
-
   do {
     if (retval != 0) {
       LOG(TIMR_LOG, LOG_ERR, "pthread_cond_timedwait failed for '%s', error %d %s\n",tmthread->button->name,retval,strerror(retval));
@@ -169,15 +193,72 @@ void *timer_worker( void *ptr )
       break;
     }
     clock_gettime(CLOCK_REALTIME, &tmthread->timeout);
-    tmthread->timeout.tv_sec += (tmthread->duration_min * 60);
+    tmthread->timeout.tv_sec += (tmthread->duration_min * 60) + tmthread->duration_sec;
     tmthread->started_at = time(0);
-    LOG(TIMR_LOG, LOG_INFO, "Will turn off '%s' in %d minutes\n",tmthread->button->name, tmthread->duration_min);
+    LOG(TIMR_LOG, LOG_INFO, "Will turn off '%s' in %d:%d\n",tmthread->button->name, tmthread->duration_min, tmthread->duration_sec);
   } while ((retval = pthread_cond_timedwait(&tmthread->thread_cond, &tmthread->thread_mutex, &tmthread->timeout)) != ETIMEDOUT);
+  pthread_mutex_unlock(&tmthread->thread_mutex);
+  */
 
+  // Waake every minute (or second) and set the dirty flag.
+  pthread_mutex_lock(&tmthread->thread_mutex);
+
+  // 1. Calculate the absolute end time once
+  struct timespec end_time;
+  clock_gettime(CLOCK_REALTIME, &end_time);
+  end_time.tv_sec += (tmthread->duration_min * 60) + tmthread->duration_sec;
+
+  tmthread->started_at = time(0);
+  LOG(TIMR_LOG, LOG_INFO, "Timer started for '%s': %d:%02d total duration\n", tmthread->button->name, tmthread->duration_min, tmthread->duration_sec);
+
+  while (1) {
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+
+    // 2. Calculate remaining time
+    long remaining_sec = end_time.tv_sec - now.tv_sec;
+
+    if (remaining_sec <= 0) {
+        break; // Timer finished
+    }
+
+    SET_DIRTY(tmthread->aqdata->is_dirty);
+    // 3. Print time left
+    if (remaining_sec >= 60) {
+      LOG(TIMR_LOG, LOG_INFO, "Time left for '%s': %ldm %lds\n", tmthread->button->name, remaining_sec / 60, remaining_sec % 60);
+    } else {
+      LOG(TIMR_LOG, LOG_INFO, "Time left for '%s': %ld seconds\n", tmthread->button->name, remaining_sec);
+    }
+
+    // Set next wake time
+    tmthread->timeout = now;
+    tmthread->timeout.tv_sec += (remaining_sec > 60) ? 60 : 1;
+
+    // Wait for timeout or signal
+    retval = pthread_cond_timedwait(&tmthread->thread_cond, &tmthread->thread_mutex, &tmthread->timeout);
+
+    if (retval == 0) {
+      // We were signaled! Someone changed tmthread->duration_min or duration_sec
+      if (tmthread->duration_min <= 0 && tmthread->duration_sec <= 0) {
+        break; // Cancelled
+      }
+
+      LOG(TIMR_LOG, LOG_INFO, "Timer update received for '%s'. Recalculating...\n", tmthread->button->name);
+        
+      // Update the end_time based on the NEW duration
+      clock_gettime(CLOCK_REALTIME, &end_time);
+      end_time.tv_sec += (tmthread->duration_min * 60) + tmthread->duration_sec;
+      // Also update started_at so get_timer_left_sec() remains accurate
+      tmthread->started_at = time(0); 
+    } 
+    else if (retval != ETIMEDOUT) {
+        LOG(TIMR_LOG, LOG_ERR, "pthread_cond_timedwait error: %d\n", retval);
+        break;
+    }
+  }
 
   pthread_mutex_unlock(&tmthread->thread_mutex);
-
-  LOG(TIMR_LOG, LOG_NOTICE, "End timer for '%s'\n",tmthread->button->name);    
+  LOG(TIMR_LOG, LOG_NOTICE, "End timer for '%s'\n", tmthread->button->name);
 
   // We need to detect if we ended on time or were killed.  
   // If killed the device is probable off (or being set to off), so we should probably poll a few times before turning off.
@@ -187,7 +268,7 @@ void *timer_worker( void *ptr )
 
   // if duration_min is 0 we were killed, if not we got here on timeout, so turn off device.
 
-  if (tmthread->duration_min != 0 && tmthread->button->led->state != OFF) {
+  if ( (tmthread->duration_min != 0 || tmthread->duration_sec != 0) && tmthread->button->led->state != OFF) {
     LOG(TIMR_LOG, LOG_INFO, "Timer waking turning '%s' off\n",tmthread->button->name);
     panel_device_request(tmthread->aqdata, ON_OFF, tmthread->deviceIndex, false, NET_TIMER);
   } else if (tmthread->button->led->state == OFF) {

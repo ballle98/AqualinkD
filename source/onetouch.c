@@ -43,7 +43,7 @@ static struct ot_macro _macros[3];
 bool _panel_version_P2 = false; // Older panels REV 0.1 and 0.2
 
 
-void set_macro_status();
+void set_macro_status(struct aqualinkdata *aqdata);
 void pump_update(struct aqualinkdata *aqdata, int updated);
 bool log_heater_setpoints(struct aqualinkdata *aqdata);
 
@@ -789,7 +789,7 @@ bool new_menu(struct aqualinkdata *aqdata)
 
   switch (menu_type) {
     case OTM_ONETOUCH:
-      set_macro_status();
+      set_macro_status(aqdata);
       break;
     case OTM_EQUIPTMENT_STATUS:
       if (initRS == false) {
@@ -835,7 +835,8 @@ bool new_menu(struct aqualinkdata *aqdata)
   return rtn;
 }
 
-void set_macro_status()
+
+void set_macro_status(struct aqualinkdata *aqdata)
 {
   // OneTouch Menu Line 2 = SPA MODE     OFF
   // OneTouch Menu Line 5 = CLEAN MODE    ON
@@ -860,6 +861,18 @@ void set_macro_status()
     LOG(ONET_LOG,LOG_DEBUG, "Macro #2 '%s' is %s\n",_macros[1].name,_macros[1].ison?"On":"Off");
     LOG(ONET_LOG,LOG_DEBUG, "Macro #3 '%s' is %s\n",_macros[2].name,_macros[2].ison?"On":"Off");
 
+    for (int i = aqdata->virtual_button_start; i < aqdata->total_buttons; i++) {
+      if (aqdata->aqbuttons[i].rssd_code - 15 == 1) {
+        SET_IF_CHANGED(aqdata->aqbuttons[i].led->state, _macros[0].ison?ON:OFF, aqdata->is_dirty);
+        LOG(ONET_LOG,LOG_DEBUG, "Setting Macro #1 '%s' to %s for button '%s'\n",_macros[0].name,_macros[0].ison?"On":"Off",aqdata->aqbuttons[i].label);
+      } else if (aqdata->aqbuttons[i].rssd_code - 15 == 2) {
+        SET_IF_CHANGED(aqdata->aqbuttons[i].led->state, _macros[1].ison?ON:OFF, aqdata->is_dirty);
+        LOG(ONET_LOG,LOG_DEBUG, "Setting Macro #1 '%s' to %s for button '%s'\n",_macros[1].name,_macros[1].ison?"On":"Off",aqdata->aqbuttons[i].label);
+      } else if (aqdata->aqbuttons[i].rssd_code - 15 == 3) {
+        SET_IF_CHANGED(aqdata->aqbuttons[i].led->state, _macros[2].ison?ON:OFF, aqdata->is_dirty);
+        LOG(ONET_LOG,LOG_DEBUG, "Setting Macro #1 '%s' to %s for button '%s'\n",_macros[2].name,_macros[2].ison?"On":"Off",aqdata->aqbuttons[i].label);
+      } 
+    }
   }
 }
 

@@ -140,7 +140,8 @@ char *prittyString(char *str);
 //void closePacketLog();
 float timespec2float(const struct timespec *elapsed);
 bool isUomTemperature( const char *uom);
-
+uint32_t time_string_to_seconds(const char *time_str);
+void seconds_to_time_string(uint32_t total_seconds, char *output_buffer, size_t buffer_size);
 
 temperatureUOM getTemperatureUOM(const char *uom);
 

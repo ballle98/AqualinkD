@@ -323,7 +323,8 @@ char *get_aux_information(aqkey *button, struct aqualinkdata *aqdata, char *buff
 //printf("Button %s is Switch\n", button->name);
   length += sprintf(buffer+length, ",\"type_ext\": \"switch_timer\", \"timer_active\":\"%s\"", (((button->special_mask & TIMER_ACTIVE) == TIMER_ACTIVE)?JSON_ON:JSON_OFF) );
   if ((button->special_mask & TIMER_ACTIVE) == TIMER_ACTIVE) {
-    length += sprintf(buffer+length,",\"timer_duration\":\"%d\"", get_timer_left(button));
+    //length += sprintf(buffer+length,",\"timer_duration\":\"%d\"", get_timer_left(button));
+    length += sprintf(buffer+length,",\"timer_duration\":\"%u\"", get_timer_left_sec(button));
   }
   return buffer;
 }
@@ -835,7 +836,7 @@ printf("Pump GPM %d\n",aqdata->pumps[i].watts);
 printf("Pump Type %d\n",aqdata->pumps[i].pumpType);
     */
     //if (aqdata->pumps[i].pumpType != PT_UNKNOWN && (aqdata->pumps[i].rpm != TEMP_UNKNOWN || aqdata->pumps[i].gpm != TEMP_UNKNOWN || aqdata->pumps[i].watts != TEMP_UNKNOWN)) {
-    if (aqdata->pumps[i].pumpType != PT_UNKNOWN ) {
+    if (aqdata->pumps[i].pumpType != PT_UNKNOWN) {
       length += sprintf(buffer+length, "\"Pump_%d\":{\"name\":\"%s\",\"id\":\"%s\",\"RPM\":\"%d\",\"GPM\":\"%d\",\"Watts\":\"%d\",\"Pump_Type\":\"%s\",\"Status\":\"%d\"},",
                         i+1,aqdata->pumps[i].button->label,aqdata->pumps[i].button->name,aqdata->pumps[i].rpm,aqdata->pumps[i].gpm,aqdata->pumps[i].watts,
                         (aqdata->pumps[i].pumpType==VFPUMP?"vfPump":(aqdata->pumps[i].pumpType==VSPUMP?"vsPump":"ePump")),
@@ -861,7 +862,8 @@ printf("Pump Type %d\n",aqdata->pumps[i].pumpType);
   for (i=0; i < aqdata->total_buttons; i++) 
   {
     if ((aqdata->aqbuttons[i].special_mask & TIMER_ACTIVE) == TIMER_ACTIVE) {
-      length += sprintf(buffer+length, "\"%s\": \"%d\",", aqdata->aqbuttons[i].name, get_timer_left(&aqdata->aqbuttons[i]) );
+      //length += sprintf(buffer+length, "\"%s\": \"%d\",", aqdata->aqbuttons[i].name, get_timer_left(&aqdata->aqbuttons[i]) );
+      length += sprintf(buffer+length, "\"%s\": \"%u\",", aqdata->aqbuttons[i].name, get_timer_left_sec(&aqdata->aqbuttons[i]) );
     }
   }
   if (buffer[length-1] == ',')
@@ -1453,6 +1455,19 @@ int build_aqualink_config_JSON(char* buffer, int size, struct aqualinkdata *aqda
       return length;
     } else
       length += result;
+
+    if (aqdata->aqbuttons[i].runtime_sec > 0) {
+      sprintf(buf,"%s_runtime", prefix);
+      char buf1[10];
+      buf1[0] = '\0';
+      seconds_to_time_string(aqdata->aqbuttons[i].runtime_sec, buf1, sizeof(buf1));
+      stringptr = buf1; // Create a pointer to the buffer
+      if ((result = json_cfg_element(buffer+length, size-length, buf, &stringptr, CFG_STRING, 0, NULL, 0)) <= 0) {
+        LOG(NET_LOG,LOG_ERR, "Config json buffer full in, result truncated! size=%d curently used=%d\n",size,length);
+        return length;
+      } else
+        length += result;
+    }
 
     if (isVS_PUMP(aqdata->aqbuttons[i].special_mask)) 
     {

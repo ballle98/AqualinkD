@@ -1154,12 +1154,10 @@ if (strlen(cleanwhitespace(value)) <= 0) {
       rtn=true;
       */
     } else if (strncasecmp(param + 9, "_light", 6) == 0) {
-
       if ( ! populateLightData(aqdata, param + 10, &aqdata->aqbuttons[num], value) ) 
       {
         LOG(AQUA_LOG,LOG_ERR, "Config error, %s Ignored!",param,value);
       }
-
       rtn=true;
      
       /*
@@ -1175,14 +1173,15 @@ if (strlen(cleanwhitespace(value)) <= 0) {
         LOG(AQUA_LOG,LOG_ERR, "Config error, Couldn't find light for '%s'\n",value);
       }*/
     } else if (strncasecmp(param + 9, "_pump", 5) == 0) {
-
       if ( ! populatePumpData(aqdata, param + 10, &aqdata->aqbuttons[num], value) ) 
       {
         LOG(AQUA_LOG,LOG_ERR, "Config error, VSP Pumps limited to %d, ignoring : %s",MAX_PUMPS,param);
       }
-
       rtn=true;
-    } 
+    } else if (strncasecmp(param + 9, "_runtime", 8) == 0) {
+      aqdata->aqbuttons[num].runtime_sec = time_string_to_seconds(value);
+      rtn=true;
+    }
 //#if defined AQ_IAQTOUCH
   } else if (strncasecmp(param, "virtual_button_", 15) == 0) {
     
@@ -1270,12 +1269,18 @@ if (strlen(cleanwhitespace(value)) <= 0) {
             vbutton->rssd_code = NUL;
           break;
         }
-
+      
       } else {
         LOG(AQUA_LOG,LOG_ERR, "Config error, could not find vitrual button for `%s`",param);
       }
       rtn=true;
-    }
+    } else if (strncasecmp(param + 17, "_runtime", 8) == 0) {
+      aqkey *vbutton = getVirtualButton(aqdata, num);
+      if (vbutton != NULL) {
+        vbutton->runtime_sec = time_string_to_seconds(value);
+        rtn=true;
+      }
+    } 
   } else if (strncasecmp(param, "sensor_", 7) == 0) {
     int num = strtoul(param + 7, NULL, 10) - 1;
     if (num + 1 > MAX_SENSORS || num < 0) {
@@ -1644,7 +1649,7 @@ char *errorlevel2text(int level)
 #define ERR_VBUTTON_NO_EXTENDEDID                 (1<<8)
 #define ERR_VBUTTON_4_BOOSTON                     (1<<9)
 #define ERR_HEATPUMP_CHILLER                      (1<<10)
-
+#define ERR_VBUTTON_ONET_NOID                     (1<<11)
 
 
 void check_print_config (struct aqualinkdata *aqdata)
@@ -1988,6 +1993,14 @@ void check_print_config (struct aqualinkdata *aqdata)
     //char ext[] = " VSP ID None | AL ID 0 ";
     char ext[120];
     ext[0] = '\0';
+
+    char runtime[11];
+    runtime[0] = '\0';
+    if (aqdata->aqbuttons[i].runtime_sec > 0) {
+      seconds_to_time_string(aqdata->aqbuttons[i].runtime_sec, runtime, sizeof(runtime));
+      sprintf(runtime+8, " |");
+    }
+
     for (j = 0; j < aqdata->num_pumps; j++) {
       if (aqdata->pumps[j].button == &aqdata->aqbuttons[i]) {
         sprintf(ext, "VSP ID 0x%02hhx | PumpID %-1d | %s",
@@ -2008,15 +2021,23 @@ void check_print_config (struct aqualinkdata *aqdata)
       sprintf(ext,"%-12s|", ((altlabel_detail *)aqdata->aqbuttons[i].special_mask_ptr)->altlabel);
     }
 
-    LOG(AQUA_LOG,LOG_NOTICE, "Button %-13s = label %-15.15s | %s\n", 
-                           aqdata->aqbuttons[i].name, aqdata->aqbuttons[i].label, ext);  
+    LOG(AQUA_LOG,LOG_NOTICE, "Button %-13s = label %-15.15s | %s%s\n", 
+                           aqdata->aqbuttons[i].name, aqdata->aqbuttons[i].label, runtime,ext);  
     
 
-    if ( ((aqdata->aqbuttons[i].special_mask & VIRTUAL_BUTTON) == VIRTUAL_BUTTON)  && 
-         ((aqdata->aqbuttons[i].special_mask & VS_PUMP ) != VS_PUMP) &&
-          ( ! is_aqualink_touch_id(_aqconfig_.extended_device_id))) {
-          //(_aqconfig_.extended_device_id < 0x30 || _aqconfig_.extended_device_id > 0x33 ) ){
-      setMASK(errors, ERR_VBUTTON_NO_EXTENDEDID);
+    if ( isVBUTTON(aqdata->aqbuttons[i].special_mask)  && ( ! is_aqualink_touch_id(_aqconfig_.extended_device_id))) 
+    {
+      // Onetouch protocol is good for if vbutton is pump or has onetouchID's
+      if (is_onetouch_id(_aqconfig_.extended_device_id)) {
+        //removeMASK(errors, ERR_VBUTTON_NO_EXTENDEDID);
+        if ( !isVS_PUMP(aqdata->aqbuttons[i].special_mask) && (aqdata->aqbuttons[i].rssd_code == NUL)) {
+          setMASK(errors, ERR_VBUTTON_ONET_NOID);
+        } //else if (!isVS_PUMP(aqdata->aqbuttons[i].special_mask)) {
+          //removeMASK(errors, ERR_VBUTTON_NO_EXTENDEDID);
+        //}
+      } else {
+        setMASK(errors, ERR_VBUTTON_NO_EXTENDEDID);
+      }
       //LOG(AQUA_LOG,LOG_WARNING, "Config error, extended_device_id must be one of the folowing (0x30,0x31,0x32,0x33) to use virtual button : '%s'",aqdata->aqbuttons[i].label);
     }
 
@@ -2067,6 +2088,9 @@ void check_print_config (struct aqualinkdata *aqdata)
   }
   if (isMASK_SET(errors, ERR_HEATPUMP_CHILLER)) {
     LOG(AQUA_LOG,LOG_ERR, "Config error, Heat pump / Chiller was not configured correctly\n");
+  }
+  if (isMASK_SET(errors, ERR_VBUTTON_ONET_NOID)) {
+    LOG(AQUA_LOG,LOG_ERR, "Config error, for Virtual Buttons using OneTouch protocol, 'onetouchID' must be set\n");
   }
 
 }
@@ -2149,6 +2173,7 @@ int save_config_js(const char* inBuf, int inSize, char* outBuf, int outSize, str
     aqdata->aqbuttons[i].special_mask_ptr = NULL;
     aqdata->aqbuttons[i].code = NUL;
     aqdata->aqbuttons[i].rssd_code = NUL;
+    aqdata->aqbuttons[i].runtime_sec = 0;
   }
   aqdata->num_pumps = 0;
   aqdata->num_lights = 0;
@@ -2458,6 +2483,12 @@ bool writeCfg (struct aqualinkdata *aqdata)
     
     if (isVBUTTON_ALTLABEL(aqdata->aqbuttons[i].special_mask)) {
       fprintf(fp,"%s_altLabel=%s\n", prefix, ((altlabel_detail *)aqdata->aqbuttons[i].special_mask_ptr)->altlabel);
+    }
+
+    if (aqdata->aqbuttons[i].runtime_sec > 0) {
+      char tmstr[30];
+      seconds_to_time_string(aqdata->aqbuttons[i].runtime_sec, tmstr, sizeof(tmstr));
+      fprintf(fp,"%s_runtime=%s\n", prefix, tmstr);
     }
  
   }

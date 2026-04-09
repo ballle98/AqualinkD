@@ -100,18 +100,14 @@ typedef struct aqualinkled
 
 typedef struct aqualinkkey
 {
-  //int number;
-  //aqledstate ledstate; // In the future there is no need to aqled struct so move code over to this.
   aqled *led;
   char *label;
   char *name;
-//#ifdef AQ_PDA
-//  char *pda_label;
-//#endif
   unsigned char code;
   unsigned char rssd_code;
   uint8_t special_mask;
   void *special_mask_ptr;
+  uint32_t runtime_sec;
 } aqkey;
 
 
@@ -176,6 +172,7 @@ typedef enum action_type {
   SPA_HTR_INCREMENT,    // Setpoint add value
   ON_OFF,
   TIMER,
+  TIMER_SEC,
   LIGHT_MODE,
   LIGHT_BRIGHTNESS,
   DATE_TIME

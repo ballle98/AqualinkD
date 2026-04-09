@@ -968,6 +968,69 @@ char *prittyString(char *str)
   return str;
 }
 
+/*
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+*/
+/**
+ * Converts a time string to total seconds.
+ * Supported formats: "HH:MM:SS", "MM:SS", or "SS"
+ */
+uint32_t time_string_to_seconds(const char *time_str) {
+    if (time_str == NULL) return 0;
+
+    int parts[3] = {0, 0, 0};
+    int count = 0;
+    
+    // Count the number of colons to determine the format
+    const char *p = time_str;
+    int colons = 0;
+    while (*p) {
+        if (*p == ':') colons++;
+        p++;
+    }
+
+    if (colons == 2) {
+        // Format: HH:MM:SS
+        count = sscanf(time_str, "%d:%d:%d", &parts[0], &parts[1], &parts[2]);
+        if (count == 3) {
+            return (uint32_t)((parts[0] * 3600) + (parts[1] * 60) + parts[2]);
+        }
+    } else if (colons == 1) {
+        // Format: MM:SS
+        count = sscanf(time_str, "%d:%d", &parts[0], &parts[1]);
+        if (count == 2) {
+            return (uint32_t)((parts[0] * 60) + parts[1]);
+        }
+    } else {
+        // Format: SS
+        count = sscanf(time_str, "%d", &parts[0]);
+        if (count == 1) {
+            return (uint32_t)parts[0];
+        }
+    }
+
+    return 0; // Return 0 if parsing failed
+}
+
+
+/**
+ * Converts total seconds into a string with format "HH:MM:SS".
+ * Ensure the output buffer is at least 9 bytes (8 chars + null terminator).
+ */
+void seconds_to_time_string(uint32_t total_seconds, char *output_buffer, size_t buffer_size) {
+    if (output_buffer == NULL || buffer_size < 9) {
+        return; 
+    }
+
+    uint32_t h = total_seconds / 3600;
+    uint32_t m = (total_seconds % 3600) / 60;
+    uint32_t s = total_seconds % 60;
+
+    // %02u ensures two digits with leading zeros
+    snprintf(output_buffer, buffer_size, "%02u:%02u:%02u", h, m, s);
+}
 
 
 temperatureUOM getTemperatureUOM(const char *uom) {

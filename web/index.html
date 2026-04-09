@@ -2017,6 +2017,31 @@
       const minutes = totalMinutes % 60;
       return `${padToTwoDigits(hours)}:${padToTwoDigits(minutes)}`;
     }
+
+/**
+ * Formats seconds into a human-readable string.
+ * Returns HH:MM if duration is 1 minute or more.
+ * Returns MM:SS if duration is less than 1 minute.
+ */
+function formatDuration(totalSeconds) {
+if (totalSeconds < 0) totalSeconds = 0;
+
+  // If we are at 1 minute or more, round to the nearest minute
+  // (e.g., 1:30 becomes 2:00, 1:29 stays 1:00)
+  if (totalSeconds >= 60) {
+    const roundedSeconds = Math.round(totalSeconds / 60) * 60;
+    const h = Math.floor(roundedSeconds / 3600);
+    const m = Math.floor((roundedSeconds % 3600) / 60);
+    
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  } 
+
+  // If under 60 seconds, show actual seconds
+  const s = Math.floor(totalSeconds % 60);
+  return `00:${s.toString().padStart(2, '0')}s`;
+}
+
+
     function padToTwoDigits(num) {
       return num.toString().padStart(2, "0");
     }
@@ -3186,7 +3211,9 @@
         //console.log("TIMER "+obj.toString());
       }
       for (var obj in data.timer_durations) {
-        setTileOnText(obj.toString(),"Timer "+toHoursAndMinutes(data.timer_durations[obj]));
+        //setTileOnText(obj.toString(),"Timer "+toHoursAndMinutes(data.timer_durations[obj]));
+        setTileOnText(obj.toString(),"Timer "+formatDuration(data.timer_durations[obj]));
+
         //setTileOnTextLine2(obj.toString(),"Timer "+toHoursAndMinutes(data.timer_durations[obj]));
         //console.log("TIMER "+obj.toString()+" duration "+data.timer_durations[obj]);
       }
