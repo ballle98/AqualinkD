@@ -159,6 +159,8 @@ Need to fix SWG when it's set to 0, thinks it's off and can't change, if it stat
 Need to look at sub panel (combined panels)
 when serial port is wrong, can't edit config.
 -->
+## Release 3.1.1 (Dev 1)
+* Changes for VSP and Virtual VSP for panel rev Yg
 
 ## Release 3.1.0 (April 2026)
 * Added device power to watts in MQTT discovery for power monitoring

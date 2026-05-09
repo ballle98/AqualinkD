@@ -500,7 +500,7 @@ bool get_pumpinfo_from_menu(struct aqualinkdata *aqdata, int menuLineIdx, int pu
       return aqdata->is_dirty;
     }
   }
-  LOG(ONET_LOG,LOG_WARNING, "Could not find config for Pump %s, Number %d, RPM %d, Watts %d, GPM %d\n",_menu[menuLineIdx],pump_number,rpm,watts,gpm);
+  LOG(ONET_LOG,LOG_INFO, "Could not find config for Pump %s, Number %d, RPM %d, Watts %d, GPM %d\n",_menu[menuLineIdx],pump_number,rpm,watts,gpm);
 
   return false;
 }
@@ -526,7 +526,7 @@ bool get_chemlinkinfo_from_menu(struct aqualinkdata *aqdata, int menuLineIdx)
     }
     return false;
   }
-  LOG(ONET_LOG, LOG_WARNING, "Did not understand Chemlink message '%s'\n",_menu[menuLineIdx + 1]);
+  LOG(ONET_LOG, LOG_INFO, "Did not understand Chemlink message '%s'\n",_menu[menuLineIdx + 1]);
   return false;
 }
 

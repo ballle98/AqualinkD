@@ -232,7 +232,9 @@ void *timer_worker( void *ptr )
 
     // Set next wake time
     tmthread->timeout = now;
-    tmthread->timeout.tv_sec += (remaining_sec > 60) ? 60 : 1;
+    //tmthread->timeout.tv_sec += (remaining_sec > 60) ? 60 : remaining_sec; // Wakes exactly when done if < 60s
+    //tmthread->timeout.tv_sec += (remaining_sec > 60) ? 60 : 1;
+    tmthread->timeout.tv_sec += (remaining_sec > 60) ? (remaining_sec - 60) : 1; // Wake ever second if under 1 minute left on timer
 
     // Wait for timeout or signal
     retval = pthread_cond_timedwait(&tmthread->thread_cond, &tmthread->thread_mutex, &tmthread->timeout);

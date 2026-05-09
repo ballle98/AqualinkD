@@ -293,6 +293,7 @@ int rsm_strcmp(const char *haystack, const char *needle)
     return -1;
   // Need to write this myself for speed
   //LOG(AQUA_LOG,LOG_DEBUG, "Compare (reset)%d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
+  LOG(IAQT_LOG, LOG_DEBUG, "Compare %d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
   //printf("***** rsm_strcmp Compare (reset)%d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
   return strncasecmp(sp1, sp2, strlen(sp2));
 }

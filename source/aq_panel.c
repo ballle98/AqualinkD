@@ -1437,13 +1437,14 @@ bool setDeviceState(struct aqualinkdata *aqdata, int deviceIndex, bool isON, req
   aqkey *button = &aqdata->aqbuttons[deviceIndex];
   bool set_pre_state = true;
 
-  //if ( button->special_mask & VIRTUAL_BUTTON  && button->special_mask & VS_PUMP) {
+  /* NSF in future Might limit to Rev Yg - Allow a Vbutton that's a pump to be turned on/off.
   if ( isVS_PUMP(button->special_mask) && isVBUTTON(button->special_mask)) {
     // Virtual Button with VSP is always on.
     LOG(PANL_LOG, LOG_INFO, "received '%s' for '%s', virtual pump is always on, ignoring", (isON == false ? "OFF" : "ON"), button->name);
     button->led->state = ON;
     return false;
   }
+  */
 
   if ((button->led->state == OFF && isON == false) ||
       (isON > 0 && (button->led->state == ON || button->led->state == FLASH ||
