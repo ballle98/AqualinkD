@@ -954,6 +954,10 @@ void *set_aqualink_iaqtouch_pump_rpm( void *ptr )
     // Try by name
     sprintf(VSPstr, "%s ADJ",pumpName);
     pButton = iaqtFindButtonByLabel(VSPstr);
+    // Try by name with multiple spaces between pumpName and ADJ
+    if (pButton == NULL) {
+      pButton = iaqtFindButtonByLabelStartEnd(pumpName, "ADJ");
+    } 
   }
 
   if (pButton == NULL) {
@@ -963,7 +967,7 @@ void *set_aqualink_iaqtouch_pump_rpm( void *ptr )
 
   send_aqt_cmd(pButton->keycode);
   if (waitfor_iaqt_nextPage(aqdata) != IAQ_PAGE_SET_VSP) {
-    LOG(IAQT_LOG, LOG_ERR, "IAQ Touch did not find %s page\n", VSPstr);
+    LOG(IAQT_LOG, LOG_ERR, "IAQ Touch did not find set speed page for %s\n", VSPstr);
     goto f_end;
   }
   LOG(IAQT_LOG, LOG_INFO, "IAQ Touch got to %s page\n", VSPstr);

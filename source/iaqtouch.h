@@ -30,6 +30,7 @@ unsigned char iaqtCurrentPageLoading();
 bool wasiaqtThreadKickTypePage();
 struct iaqt_page_button *iaqtFindButtonByLabel(const char *label);
 struct iaqt_page_button *iaqtFindButtonByIndex(int index);
+struct iaqt_page_button *iaqtFindButtonByLabelStartEnd(const char *start, const char *end);
 const char *iaqtGetMessageLine(int index);
 const char *iaqtGetTableInfoLine(int index);
 unsigned char iaqtLastMsg();

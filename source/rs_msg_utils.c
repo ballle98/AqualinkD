@@ -293,7 +293,7 @@ int rsm_strcmp(const char *haystack, const char *needle)
     return -1;
   // Need to write this myself for speed
   //LOG(AQUA_LOG,LOG_DEBUG, "Compare (reset)%d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
-  LOG(IAQT_LOG, LOG_DEBUG, "Compare %d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
+  //LOG(IAQT_LOG, LOG_DEBUG, "Compare %d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
   //printf("***** rsm_strcmp Compare (reset)%d chars of '%s' to '%s'\n",strlen(sp2),sp1,sp2);
   return strncasecmp(sp1, sp2, strlen(sp2));
 }
@@ -376,6 +376,51 @@ int rsm_strmatch_ignore(const char *haystack, const char *needle, int ignore_cha
 }
 
 
+/**
+ * rsm_str_match_pair - Verifies a haystack follows the format:
+ * [spaces] start_needle [spaces] end_needle
+ * 
+ * Returns true if the string matches exactly with nothing extra.
+ */
+bool rsm_strmatch_pair(const char *haystack, const char *start_needle, const char *end_needle) {
+    if (!haystack || !start_needle || !end_needle) return false;
+
+    const char *p = haystack;
+    size_t s_len = strlen(start_needle);
+    size_t e_len = strlen(end_needle);
+
+    // Skip leading spaces
+    while (isspace((unsigned char)*p)) p++;
+
+    // Match start_needle
+    if (strncmp(p, start_needle, s_len) != 0) return false;
+    p += s_len;
+
+    // Ensure a space exists after start_needle (word boundary)
+    if (!isspace((unsigned char)*p)) return false;
+
+    // Skip middle spaces
+    while (isspace((unsigned char)*p)) p++;
+
+    // Match end_needle
+    if (strncmp(p, end_needle, e_len) != 0) return false;
+    
+    // Success! We found both in order. 
+    // We don't check for trailing spaces or \0 here.
+    return true; 
+
+    /* If we wanted to check to end of string for spaces, use below.
+    p += e_len;
+
+    // Skip optional trailing spaces
+    while (isspace((unsigned char)*p)) p++;
+
+    // Success if we reached the end of the string
+    return (*p == '\0');
+    */
+}
+
+
 /*
 * Find last index of char in string.
 *    char *sp;
@@ -396,8 +441,6 @@ char *rsm_lastindexof(const char *haystack, const char *needle, size_t length)
 
   return NULL;
 }
-
-
 
 int rsm_strncmp(const char *haystack, const char *needle, int length)
 {

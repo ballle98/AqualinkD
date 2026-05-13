@@ -204,6 +204,39 @@ struct iaqt_page_button *iaqtFindButtonByLabel(const char *label) {
   return NULL;
 }
 
+struct iaqt_page_button *iaqtFindButtonByLabelStartEnd(const char *start, const char *end) {
+  int i;
+  struct iaqt_page_button *buttons;
+
+  if (_currentPage == IAQ_PAGE_DEVICES || _currentPage == IAQ_PAGE_DEVICES_REV_Yg)
+    buttons = _devicePageButtons[0];
+  else if (_currentPage == IAQ_PAGE_DEVICES2)
+    buttons = _devicePageButtons[1];
+  else if (_currentPage == IAQ_PAGE_DEVICES3)
+    buttons = _devicePageButtons[2];
+  else if (_currentPage == IAQ_PAGE_SYSTEM_SETUP )
+    buttons = _deviceSystemSetupButtons[0];
+  else if (_currentPage == IAQ_PAGE_SYSTEM_SETUP2 )
+    buttons = _deviceSystemSetupButtons[1];
+  else if (_currentPage == IAQ_PAGE_SYSTEM_SETUP3 )
+    buttons = _deviceSystemSetupButtons[2];
+  else if (_currentPage == IAQ_PAGE_HOME )
+    buttons = _homeButtons;
+  else
+    buttons = _pageButtons;
+
+  for (i=0; i < IAQ_PAGE_BUTTONS; i++) {
+    if (rsm_strmatch_pair((char *)buttons[i].name, start, end)) {
+      LOG(IAQT_LOG, LOG_DEBUG, "Found button '%s %s'\n",start,end);
+      return &buttons[i];
+    }
+  }
+
+  LOG(IAQT_LOG, LOG_DEBUG, "Did not find button '%s %s'\n",start,end);
+  return NULL;
+}
+
+
 int num2iaqtRSset (unsigned char* packetbuffer, int num, bool pad4unknownreason)
 {
   //unsigned int score = 42;   // Works for score in [0, UINT_MAX]
@@ -986,6 +1019,10 @@ bool process_iaqtouch_packet(unsigned char *packet, int length, struct aqualinkd
     rsm_strncpy(_popupMsg, packet + 6, AQ_MSGLONGLEN, length-9);
     LOG(IAQT_LOG,LOG_INFO, "Popup message '%s'\n",_popupMsg);
     
+    if (rsm_strcmp(_popupMsg, "Invalid")) {
+      // Info:    iAQ Touch: Popup message '- Invalid Pump Speed - Speed must be 2500 - 3450 RPM'
+      LOG(IAQT_LOG,LOG_ERR, "Bad programming? Message from panel '%s'\n",_popupMsg);
+    }
     // Change this message, since you can't press OK.  'Light will turn off in 5 seconds. To change colors press Ok now.'
      if ((sp = rsm_strncasestr(_popupMsg, "To change colors press Ok now", strlen(_popupMsg))) != NULL)
      {

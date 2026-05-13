@@ -19,6 +19,7 @@ char *rsm_lastindexof(const char *haystack, const char *needle, size_t length);
 int rsm_strmatch(const char *haystack, const char *needle);
 int rsm_strmatch_ignore(const char *haystack, const char *needle, int ignore_chars);
 
+bool rsm_strmatch_pair(const char *haystack, const char *start_needle, const char *end_needle);
 int rsm_strncpy(char *dest, const unsigned char *src, int dest_len, int src_len);
 int rsm_strcmp(const char *s1, const char *s2);
 int rsm_strncmp(const char *haystack, const char *needle, int length);

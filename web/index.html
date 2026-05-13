@@ -990,9 +990,18 @@
         //alert("NOT Standalone");
       }
 
+      // For one external script (and backwards compatibility),
       if (_config?.external_script) {
         loadScriptIfAvailable(_config.external_script);
       }
+
+      // For multiple external scripts
+      if (Array.isArray(_config?.external_scripts)) {
+        _config.external_scripts.forEach(scriptUrl => {
+          loadScriptIfAvailable(scriptUrl);
+        });
+      }
+
             
       // Test for iframe
       if (window.self !== window.top) {
@@ -1351,7 +1360,7 @@
       if (type.startsWith("switch")) { // Use default SVG for icon images
 
         if (off_imgurl == null) {
-            var valdiv = document.createElement('div');
+          var valdiv = document.createElement('div');
           if (_DisableOffIconCircle) {
             valdiv.setAttribute('class', 'switch-off tile_icon_value');
           } else {
@@ -1447,6 +1456,7 @@
     }
 
     function countLines(text, limit = 15) {
+      if (!text) return 1;
       const words = text.split(/\s+/);  // split on spaces (multiple OK)
       let lines = 1;
       let currentLen = 0;
@@ -1562,6 +1572,7 @@
         } else {
           let uom;
           if ((uom = document.getElementById(id).getAttribute('UOM')) != null) {
+            //console.log("UOM for "+id+" is "+uom);
             ext = uom;
             //ext = '<span class="uom_text">'+uom+'</span>';
           } else if ((type = document.getElementById(id).getAttribute('type')) != null) { 
