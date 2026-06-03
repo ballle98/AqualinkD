@@ -1709,7 +1709,7 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
     return;
   }
 
-  if (! is_valid_light_mode(light->lightType, value)) {
+  if (value != USE_LAST_VALUE && ! is_valid_light_mode(light->lightType, value)) {
     LOG(PANL_LOG,LOG_ERR, "Light mode '%d' is not valid for light '%s', %s\n", value, lightTypeName(light->lightType), light->button->label);
     return;
   }
