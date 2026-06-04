@@ -326,6 +326,10 @@ typedef struct clightd
   unsigned char lightID; // RS485 ID (only Jandy infinate watercolor)
   int currentValue;
   int lastValue;         // Used for AqualinkD self programming
+  int brightness;        // Last known brightness (LC_JANDYINFINATE only, from 0x31 response)
+  int red;               // Last set RGB red channel (LC_JANDYINFINATE, optimistic)
+  int green;             // Last set RGB green channel
+  int blue;              // Last set RGB blue channel
   aqledstate RSSDstate;  // state from rs serial adapter
 } clight_detail;
 

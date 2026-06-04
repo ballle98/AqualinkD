@@ -1716,6 +1716,10 @@ void programDeviceLightRGB(struct aqualinkdata *aqdata, int packed_rgb, int devi
   }
 
   aq_programmer(AQ_SET_IAQLINK_LIGHT_RGB, light->button, packed_rgb, 0, aqdata);
+
+  light->red   = (packed_rgb >> 16) & 0xFF;
+  light->green = (packed_rgb >>  8) & 0xFF;
+  light->blue  =  packed_rgb        & 0xFF;
 }
 
 /*

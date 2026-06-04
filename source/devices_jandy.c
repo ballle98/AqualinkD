@@ -1245,8 +1245,14 @@ bool processPacketToJandyLight(unsigned char *packet_buffer, int packet_length, 
 bool processPacketFromJandyLight(unsigned char *packet_buffer, int packet_length, struct aqualinkdata *aqdata, const unsigned char previous_packet_to)
 {
   if (packet_buffer[3] == 0x31 ) {
-    // This has most of the info.
     LOG(DJAN_LOG, LOG_INFO, "Light brightness=%d\n", packet_buffer[38]);
+    for (int i = 0; i < aqdata->num_lights; i++) {
+      if (aqdata->lights[i].lightType == LC_JANDYINFINATE &&
+          aqdata->lights[i].lightID == previous_packet_to) {
+        SET_IF_CHANGED(aqdata->lights[i].brightness, packet_buffer[38], aqdata->is_dirty);
+        break;
+      }
+    }
   }
 
   if (!shouldPrintJAndyDebugPacket()) {

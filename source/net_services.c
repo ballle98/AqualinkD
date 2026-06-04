@@ -933,13 +933,34 @@ void mqtt_broadcast_aqualinkstate(struct mg_connection *nc)
         //send_mqtt_string_msg(nc, topic, light_mode_name(_aqualink_data->lights[i].lightType, _aqualink_data->lights[i].currentValue, RSSADAPTER));
         send_mqtt_string_msg(nc, topic, get_currentlight_mode_name(_aqualink_data->lights[i], RSSADAPTER));
       }
-      /* 
+      /*
       if (_aqualink_data->lights[i].lightType == LC_DIMMER) {
         sprintf(topic, "%s%s", _aqualink_data->lights[i].button->name, LIGHT_DIMMER_VALUE_TOPIC);
         send_mqtt_int_msg(nc, topic, _aqualink_data->lights[i].currentValue * 25);
       } else*/ if (_aqualink_data->lights[i].lightType == LC_DIMMER2) {
         sprintf(topic, "%s%s", _aqualink_data->lights[i].button->name, LIGHT_DIMMER_VALUE_TOPIC);
         send_mqtt_int_msg(nc, topic, _aqualink_data->lights[i].currentValue);
+      }
+    }
+
+    if (_aqualink_data->lights[i].lightType == LC_JANDYINFINATE) {
+      if (_aqualink_data->lights[i].brightness != _last_mqtt_aqualinkdata.lights[i].brightness) {
+        _last_mqtt_aqualinkdata.lights[i].brightness = _aqualink_data->lights[i].brightness;
+        sprintf(topic, "%s%s", _aqualink_data->lights[i].button->name, LIGHT_DIMMER_VALUE_TOPIC);
+        send_mqtt_int_msg(nc, topic, _aqualink_data->lights[i].brightness);
+      }
+      if (_aqualink_data->lights[i].red   != _last_mqtt_aqualinkdata.lights[i].red   ||
+          _aqualink_data->lights[i].green != _last_mqtt_aqualinkdata.lights[i].green ||
+          _aqualink_data->lights[i].blue  != _last_mqtt_aqualinkdata.lights[i].blue) {
+        _last_mqtt_aqualinkdata.lights[i].red   = _aqualink_data->lights[i].red;
+        _last_mqtt_aqualinkdata.lights[i].green = _aqualink_data->lights[i].green;
+        _last_mqtt_aqualinkdata.lights[i].blue  = _aqualink_data->lights[i].blue;
+        char rgb_msg[12];
+        sprintf(rgb_msg, "%d,%d,%d", _aqualink_data->lights[i].red,
+                                     _aqualink_data->lights[i].green,
+                                     _aqualink_data->lights[i].blue);
+        sprintf(topic, "%s%s", _aqualink_data->lights[i].button->name, LIGHT_RGB_TOPIC);
+        send_mqtt_string_msg(nc, topic, rgb_msg);
       }
     }
   }
