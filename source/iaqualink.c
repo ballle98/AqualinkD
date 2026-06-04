@@ -295,6 +295,8 @@ void set_iaqualink_light_brightness(aqkey *button, int value)
 
   _fullcmd[6] = (unsigned char)value;
 
+  LOG(IAQL_LOG, LOG_NOTICE, ">>> Sending Jandy Infinite brightness=%d devID=0x%02hhx (watch for 0x72/0x70/0x71 changes below)\n", value, _fullcmd[4]);
+
   push_iaqualink_cmd(_cmd_readyCommand, 2);
   push_iaqualink_cmd(_fullcmd, 19);
 
@@ -694,6 +696,25 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             decodeTypeBits(packet[status + 1], packet[status + 2], packet[status + 3])
           );
       }
+      // Diagnostic: dump full raw entry for any LC_JANDYINFINATE light
+      for (int li = 0; li < aqdata->num_lights; li++) {
+        if (aqdata->lights[li].lightType == LC_JANDYINFINATE &&
+            aqdata->lights[li].button != NULL &&
+            rsm_strcmp((char *)&packet[labelstart], aqdata->lights[li].button->label) == 0) {
+          // Log all bytes from entry start through label + up to 8 extra bytes, to catch any trailing brightness/RGB data
+          int entry_end = labelstart + labellen;
+          int dump_end = entry_end + 8;
+          if (dump_end > length - 1) dump_end = length - 1;
+          char hexbuf[128];
+          int hpos = 0;
+          for (int b = status; b < dump_end; b++) {
+            hpos += snprintf(hexbuf + hpos, sizeof(hexbuf) - hpos, "%02hhx ", packet[b]);
+          }
+          LOG(IAQL_LOG, LOG_NOTICE, "JANDYINFINATE '%.*s' raw entry [status+0 .. +%d]: %s\n",
+              labellen, &packet[labelstart], dump_end - status - 1, hexbuf);
+        }
+      }
+
       if (isPDA_PANEL) {
         for (int bi=2 ; bi < aqdata->total_buttons ; bi++) {
           if (rsm_strcmp((char *)&packet[labelstart], aqdata->aqbuttons[bi].label) == 0) {
@@ -710,6 +731,10 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
 
       i = labelstart + labellen;
     }
+  }
+  else {
+    LOG(IAQL_LOG, LOG_NOTICE, "UNKNOWN iAqualink status packet cmd=0x%02hhx len=%d\n", packet[PKT_CMD], length);
+    logPacket(IAQL_LOG, LOG_NOTICE, packet, length, true);
   }
 
   return true;
