@@ -295,8 +295,6 @@ void set_iaqualink_light_brightness(aqkey *button, int value)
 
   _fullcmd[6] = (unsigned char)value;
 
-  LOG(IAQL_LOG, LOG_NOTICE, ">>> Sending Jandy Infinite brightness=%d devID=0x%02hhx (watch for 0x72/0x70/0x71 changes below)\n", value, _fullcmd[4]);
-
   push_iaqualink_cmd(_cmd_readyCommand, 2);
   push_iaqualink_cmd(_fullcmd, 19);
 
@@ -748,8 +746,7 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
     }
   }
   else {
-    LOG(IAQL_LOG, LOG_NOTICE, "UNKNOWN iAqualink status packet cmd=0x%02hhx len=%d\n", packet[PKT_CMD], length);
-    logPacket(IAQL_LOG, LOG_NOTICE, packet, length, true);
+    LOG(IAQL_LOG, LOG_DEBUG, "Unhandled iAqualink status packet cmd=0x%02hhx len=%d\n", packet[PKT_CMD], length);
   }
 
   return true;
