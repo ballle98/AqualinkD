@@ -112,11 +112,15 @@ void _logPacket(logmask_t from, const unsigned char *packet_buffer, int packet_l
 {
   static unsigned char lastPacketTo = NUL;
 
+  // iAqualnk sendCmd packets (CMD_IAQ_PAGE_BUTTON=0x24 to master 0x00) always log at NOTICE
+  bool is_iaql_sendcmd = (!is_read && packet_buffer[PKT_CMD] == 0x24 && packet_buffer[PKT_DEST] == 0x00);
+
   // No point in continuing if loglevel is < debug_serial and not writing to file
-  if ( force == false && 
-       error == false && 
-       getLogLevel(from) < LOG_DEBUG_SERIAL && 
-       /*_logfile_raw == false &&*/ 
+  if ( force == false &&
+       error == false &&
+       is_iaql_sendcmd == false &&
+       getLogLevel(from) < LOG_DEBUG_SERIAL &&
+       /*_logfile_raw == false &&*/
        _logfile_packets == false ) {
     return;
   }
@@ -152,7 +156,9 @@ void _logPacket(logmask_t from, const unsigned char *packet_buffer, int packet_l
   if (error == true)
     LOG_LARGEMSG(from,LOG_WARNING, buff, len);
   else {
-    if (force) {
+    if (is_iaql_sendcmd) {
+      LOG_LARGEMSG(from, LOG_NOTICE, buff, len);
+    } else if (force) {
       LOG_LARGEMSG(from, getSystemLogLevel()<LOG_DEBUG?getSystemLogLevel():LOG_DEBUG, buff, len);
       //LOG_LARGEMSG(from, LOG_DEBUG, buff, len);
     }
