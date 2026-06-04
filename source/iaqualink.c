@@ -266,8 +266,66 @@ HEX: 0x10|0x02|0x00|0x24|0x73|0x01|0x05|0x00|0x48|0x00|0x00|0x00|0x00|0x00|0x00|
 */
 
 
+void set_iaqualink_light_colormode(aqkey *button, int value)
+{
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = (unsigned char)value;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+}
+
+void set_iaqualink_light_brightness(aqkey *button, int value)
+{
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = (unsigned char)value;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+}
+
+void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
+{
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = (unsigned char)r;
+  _fullcmd[7] = (unsigned char)g;
+  _fullcmd[8] = (unsigned char)b;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
+  _fullcmd[8] = 0x00;
+}
+
 void set_iaqualink_aux_state(aqkey *button, bool isON) {
-  
+
   _fullcmd[4] = iAqalnkDevID(button);
 
   if (_fullcmd[4] != 0xFF) {

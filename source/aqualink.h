@@ -175,6 +175,7 @@ typedef enum action_type {
   TIMER_SEC,
   LIGHT_MODE,
   LIGHT_BRIGHTNESS,
+  LIGHT_RGB,
   DATE_TIME
 } action_type;
 

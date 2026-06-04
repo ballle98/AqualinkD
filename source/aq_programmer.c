@@ -734,6 +734,18 @@ void _aq_programmer_(program_type r_type, char *args, aqkey *button, int value, 
       set_iaqualink_heater_setpoint(value, SP_CHILLER);
       return; // No need to create this as thread.
       break;
+    case AQ_SET_IAQLINK_LIGHTCOLOR_MODE:
+      set_iaqualink_light_colormode(button, value);
+      return; // No need to create this as thread.
+      break;
+    case AQ_SET_IAQLINK_LIGHT_BRIGHTNESS:
+      set_iaqualink_light_brightness(button, value);
+      return; // No need to create this as thread.
+      break;
+    case AQ_SET_IAQLINK_LIGHT_RGB:
+      set_iaqualink_light_rgb(button, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF);
+      return; // No need to create this as thread.
+      break;
     default:
       // NSF REALLY Should check that _prog_functions[type] is valid.
       if( pthread_create( &programmingthread->thread_id , NULL ,  _prog_functions[type], (void*)programmingthread) < 0) {
@@ -775,6 +787,18 @@ void _aq_programmer_(program_type r_type, char *args, aqkey *button, int value, 
     case AQ_SET_IAQLINK_CHILLER_TEMP:
       set_iaqualink_heater_setpoint(atoi(args), SP_CHILLER);
       return; // No need to create this as thread.
+      break;
+    case AQ_SET_IAQLINK_LIGHTCOLOR_MODE:
+      LOG(PROG_LOG, LOG_ERR, "AQ_SET_IAQLINK_LIGHTCOLOR_MODE not supported in old programmer mode\n");
+      return;
+      break;
+    case AQ_SET_IAQLINK_LIGHT_BRIGHTNESS:
+      LOG(PROG_LOG, LOG_ERR, "AQ_SET_IAQLINK_LIGHT_BRIGHTNESS not supported in old programmer mode\n");
+      return;
+      break;
+    case AQ_SET_IAQLINK_LIGHT_RGB:
+      LOG(PROG_LOG, LOG_ERR, "AQ_SET_IAQLINK_LIGHT_RGB not supported in old programmer mode\n");
+      return;
       break;
     default:
       // Should check that _prog_functions[type] is valid.
@@ -1033,6 +1057,15 @@ const char *ptypeName(program_type type)
     case AQ_SET_IAQLINK_CHILLER_TEMP:
       return "Set iAqualink Chiller Heater";
     break;
+    case AQ_SET_IAQLINK_LIGHTCOLOR_MODE:
+      return "Set iAqualink Light Mode";
+    break;
+    case AQ_SET_IAQLINK_LIGHT_BRIGHTNESS:
+      return "Set iAqualink Light Brightness";
+    break;
+    case AQ_SET_IAQLINK_LIGHT_RGB:
+      return "Set iAqualink Light RGB";
+    break;
 
 #ifdef AQ_PDA
     case AQ_PDA_INIT:
@@ -1130,6 +1163,9 @@ const char *programtypeDisplayName(program_type type)
     case AQ_SET_LIGHTPROGRAM_MODE:
     case AQ_SET_LIGHTCOLOR_MODE:
     case AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE:
+    case AQ_SET_IAQLINK_LIGHTCOLOR_MODE:
+    case AQ_SET_IAQLINK_LIGHT_BRIGHTNESS:
+    case AQ_SET_IAQLINK_LIGHT_RGB:
     case AQ_SET_LIGHTDIMMER:
     case AQ_SET_ALLB_LIGHTDIMMER:
     case AQ_SET_ALLB_LIGHTCOLOR_MODE:

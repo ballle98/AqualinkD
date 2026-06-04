@@ -37,6 +37,7 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rspda, int size, bool co
 
 void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int button, bool expectMultiple, request_source source);
 void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int deviceIndex, bool expectMultiple, request_source source);
+void programDeviceLightRGB(struct aqualinkdata *aqdata, int packed_rgb, int deviceIndex, request_source source);
 
 
 void printPanelSupport(struct aqualinkdata *aqdata);
@@ -1349,6 +1350,9 @@ const char* getActionName(action_type type)
     case LIGHT_BRIGHTNESS:
       return "Light Brightness";
     break;
+    case LIGHT_RGB:
+      return "Light RGB";
+    break;
   }
 
   static char buf[25];
@@ -1609,13 +1613,26 @@ void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int de
     return;
   }
 
-  if  (light == NULL || (light->lightType != LC_DIMMER2 && light->lightType != LC_DIMMER)) {
+  if  (light == NULL || (light->lightType != LC_DIMMER2 && light->lightType != LC_DIMMER && light->lightType != LC_JANDYINFINATE)) {
     LOG(PANL_LOG,LOG_ERR, "Can not set light brightness on device '%s'\n",aqdata->aqbuttons[deviceIndex].label);
     return;
   }
- 
+
   if (!isRSSA_ENABLED && light->lightType == LC_DIMMER2) {
     LOG(PANL_LOG,LOG_ERR, "Light mode brightness 11 is only supported when `rssa_device_id` is set\n");
+    return;
+  }
+
+  if (light->lightType == LC_JANDYINFINATE) {
+    if (!isIAQL_ACTIVE) {
+      LOG(PANL_LOG, LOG_ERR, "Brightness for Jandy Infinite light requires iAqualink (enable_iaqualink=yes)\n");
+      return;
+    }
+    if (value == 0) {
+      set_iaqualink_aux_state(light->button, false);
+    } else {
+      aq_programmer(AQ_SET_IAQLINK_LIGHT_BRIGHTNESS, light->button, value, 0, aqdata);
+    }
     return;
   }
 
@@ -1684,6 +1701,23 @@ void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int de
   return;
 }
 
+void programDeviceLightRGB(struct aqualinkdata *aqdata, int packed_rgb, int deviceIndex, request_source source)
+{
+  clight_detail *light = getProgramableLight(aqdata, deviceIndex);
+
+  if (light == NULL || light->lightType != LC_JANDYINFINATE) {
+    LOG(PANL_LOG, LOG_ERR, "RGB color only supported on Jandy Infinite light\n");
+    return;
+  }
+
+  if (!isIAQL_ACTIVE) {
+    LOG(PANL_LOG, LOG_ERR, "RGB for Jandy Infinite light requires iAqualink (enable_iaqualink=yes)\n");
+    return;
+  }
+
+  aq_programmer(AQ_SET_IAQLINK_LIGHT_RGB, light->button, packed_rgb, 0, aqdata);
+}
+
 /*
    value 0 = off
    value 101/USE_LAST_VALUE = On use default mode if you can
@@ -1703,6 +1737,8 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
   */
 
   clight_detail *light = getProgramableLight(aqdata, deviceIndex);
+
+  value = 3;
 
   if (light == NULL) {
     LOG(PANL_LOG,LOG_ERR, "Light mode control not configured for button %d\n", deviceIndex);
@@ -1746,6 +1782,9 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
         aq_programmer(AQ_SET_LIGHTCOLOR_MODE, light->button, 1, extra_value, aqdata);
       }
       return;
+    } else if (isIAQT_ENABLED) {
+      aq_programmer(AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE, light->button, 0, extra_value, aqdata);
+      return;
     }
   } else if (value == 0) {
     // We simply need to turn the light off at this point, so use allbutton key as it's the quickest.
@@ -1786,6 +1825,11 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
   {
     //DPRINTF("AQ_SET_ALLB_LIGHTCOLOR_MODE");
     aq_programmer(AQ_SET_ALLB_LIGHTCOLOR_MODE, light->button, value, extra_value, aqdata);
+  }
+  // Use iAqualink direct protocol for Jandy Infinite Water Colors when enabled
+  else if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE)
+  {
+    aq_programmer(AQ_SET_IAQLINK_LIGHTCOLOR_MODE, light->button, value, extra_value, aqdata);
   }
   // Use AqualinkTouch if explicitly set or virtual button.
   else if (isIAQT_ENABLED &&
@@ -1843,7 +1887,7 @@ bool panel_device_request(struct aqualinkdata *aqdata, action_type type, int dev
                           deviceIndex,
                           value,
                           getRequestName(source));
-  } else if (type == ON_OFF || type == TIMER ||type == TIMER_SEC || type == LIGHT_BRIGHTNESS || type == LIGHT_MODE){
+  } else if (type == ON_OFF || type == TIMER ||type == TIMER_SEC || type == LIGHT_BRIGHTNESS || type == LIGHT_RGB || type == LIGHT_MODE){
     LOG(PANL_LOG,LOG_INFO, "Device request type '%s' for deviceindex %d '%s' of value %d from '%s'\n",
                           getActionName(type),
                           deviceIndex,
@@ -1878,6 +1922,9 @@ bool panel_device_request(struct aqualinkdata *aqdata, action_type type, int dev
     case LIGHT_BRIGHTNESS:
       // Allow value=0 here (unlike LIGHT_MODE) since we could get multiple requests from a slider. (aka HomeKit)
       programDeviceLightBrightness(aqdata, value, deviceIndex, (source==NET_MQTT?true:false), source);
+    break;
+    case LIGHT_RGB:
+      programDeviceLightRGB(aqdata, value, deviceIndex, source);
     break;
     case LIGHT_MODE:
       if (value <= 0) {
