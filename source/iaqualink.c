@@ -716,6 +716,11 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             aqdata->lights[li].brightness = new_brightness;
             aqdata->is_dirty = true;
           }
+          // In custom RGB mode dump the full 0x72 packet so we can hunt for R/G/B bytes
+          if (new_mode == 0x10) {
+            LOG(IAQL_LOG, LOG_NOTICE, "LC_JANDYINFINATE custom RGB — full 0x72 packet (%d bytes):\n", length);
+            logPacket(IAQL_LOG, LOG_NOTICE, packet, length, true);
+          }
         }
       }
 
