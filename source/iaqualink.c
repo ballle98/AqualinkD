@@ -676,13 +676,11 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
     // Since this is so similar to above CMD_IAQ_1TOUCH_STATUS, we should look at using same logic for both.
     int start = packet[4];
     start = start + 5;
-    int entryIndex = 0;
     for (int i = start; i < length - 3; i = i)
     {
       int status = i;
       int labelstart = status + 5;
       int labellen = packet[status + 4];
-      // packet[5 + entryIndex] = IAQ device code for this entry (same layout as 0x71 packet)
       if (labelstart + labellen < length)
       {
         LOG(IAQL_LOG, LOG_INFO, "%-15.*s = %s | bit1=0x%02hhx bit2=0x%02hhx bit3=0x%02hhx bit4=0x%02hhx %s\n", 
@@ -701,12 +699,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
         if (aqdata->lights[li].lightType == LC_JANDYINFINATE &&
             aqdata->lights[li].button != NULL &&
             rsm_strcmp((char *)&packet[labelstart], aqdata->lights[li].button->label) == 0) {
-          // Store the IAQ device code so iAqalnkDevID works for this virtual button
-          if (aqdata->lights[li].button->rssd_code == NUL) {
-            aqdata->lights[li].button->rssd_code = packet[5 + entryIndex];
-            LOG(IAQL_LOG, LOG_INFO, "LC_JANDYINFINATE '%.*s' IAQ device code set to 0x%02hhx\n",
-                labellen, &packet[labelstart], aqdata->lights[li].button->rssd_code);
-          }
           int new_mode       = packet[status];
           int new_brightness = packet[status + 3];
           aqledstate new_led = (new_mode == 0x00 ? OFF : ON);
@@ -741,7 +733,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
       }
 
       i = labelstart + labellen;
-      entryIndex++;
     }
   }
   else {
