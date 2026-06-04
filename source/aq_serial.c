@@ -851,7 +851,9 @@ void send_packet(int fd, unsigned char *packet, int length)
   // MAYBE Change this back to debug serial
   //LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial write %d bytes\n",length-2);
   //LOG(RSSD_LOG,LOG_DEBUG, "Serial write %d bytes, type 0x%02hhx cmd 0x%02hhx\n",length-2,packet[5],packet[6]);
-  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL)
+  // packet[3]=DEST, packet[4]=CMD in the NUL|DLE|STX|DEST|CMD|... layout
+  bool _is_iaql_sendcmd = (packet[3] == 0x00 && packet[4] == 0x24);
+  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL || _is_iaql_sendcmd)
     logPacketWrite(&packet[1], length-1);
 /*
   if (getLogLevel(PDA_LOG) == LOG_DEBUG) {
