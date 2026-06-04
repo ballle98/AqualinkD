@@ -696,15 +696,18 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             decodeTypeBits(packet[status + 1], packet[status + 2], packet[status + 3])
           );
       }
-      // LC_JANDYINFINATE: bit4 (packet[status+3]) carries current brightness (0-100)
+      // LC_JANDYINFINATE: bit4 (packet[status+3]) carries current brightness (0-100).
+      // bit1 (packet[status+0]) is 0x06 when on rather than 0x01 — may encode color mode.
       for (int li = 0; li < aqdata->num_lights; li++) {
         if (aqdata->lights[li].lightType == LC_JANDYINFINATE &&
             aqdata->lights[li].button != NULL &&
             rsm_strcmp((char *)&packet[labelstart], aqdata->lights[li].button->label) == 0) {
+          // Always log all 4 status bytes at NOTICE so color-mode changes are visible
+          LOG(IAQL_LOG, LOG_NOTICE, "LC_JANDYINFINATE '%.*s' status bytes: s0=0x%02hhx s1=0x%02hhx s2=0x%02hhx s3=0x%02hhx(brightness=%d)\n",
+              labellen, &packet[labelstart],
+              packet[status], packet[status+1], packet[status+2], packet[status+3], packet[status+3]);
           int new_brightness = packet[status + 3];
           if (aqdata->lights[li].brightness != new_brightness) {
-            LOG(IAQL_LOG, LOG_INFO, "LC_JANDYINFINATE '%.*s' brightness updated %d -> %d\n",
-                labellen, &packet[labelstart], aqdata->lights[li].brightness, new_brightness);
             aqdata->lights[li].brightness = new_brightness;
             aqdata->is_dirty = true;
           }
