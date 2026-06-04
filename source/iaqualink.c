@@ -633,11 +633,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
       for (int bi=aqdata->virtual_button_start ; bi < aqdata->total_buttons ; bi++) {
         //LOG(IAQL_LOG, LOG_INFO, "Check %s against %s\n",(char *)&packet[start + 2], aqdata->aqbuttons[bi].label);
         if (rsm_strcmp((char *)&packet[start + 2], aqdata->aqbuttons[bi].label) == 0) {
-          // Diagnostic: log raw status byte for LC_JANDYINFINATE to check if color mode is encoded here
-          for (int li = 0; li < aqdata->num_lights; li++) {
-            if (aqdata->lights[li].lightType == LC_JANDYINFINATE && aqdata->lights[li].button == &aqdata->aqbuttons[bi])
-              LOG(IAQL_LOG, LOG_NOTICE, "0x71 LC_JANDYINFINATE '%s' raw status=0x%02hhx byteType=0x%02hhx\n", aqdata->aqbuttons[bi].label, status, byteType);
-          }
           // == means doesn;t match, RS 1=on 0=off / LED enum 1=off 0=on
           if (aqdata->aqbuttons[bi].led->state == status) {
             LOG(IAQL_LOG, LOG_INFO, "Updated Status for %s is %s\n",aqdata->aqbuttons[bi].label,(status == 0x00 ? "Off" : "On "));
@@ -706,6 +701,8 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             rsm_strcmp((char *)&packet[labelstart], aqdata->lights[li].button->label) == 0) {
           int new_mode       = packet[status];
           int new_brightness = packet[status + 3];
+          aqledstate new_led = (new_mode == 0x00 ? OFF : ON);
+          SET_IF_CHANGED(aqdata->lights[li].button->led->state, new_led, aqdata->is_dirty);
           if (aqdata->lights[li].currentValue != new_mode) {
             LOG(IAQL_LOG, LOG_INFO, "LC_JANDYINFINATE '%.*s' color mode updated %d -> %d\n",
                 labellen, &packet[labelstart], aqdata->lights[li].currentValue, new_mode);
