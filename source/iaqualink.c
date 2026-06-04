@@ -723,17 +723,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             aqdata->lights[li].brightness = new_brightness;
             aqdata->is_dirty = true;
           }
-          // In custom RGB mode dump the full 0x72 packet so we can hunt for R/G/B bytes
-          if (new_mode == 0x10) {
-            LOG(IAQL_LOG, LOG_NOTICE, "LC_JANDYINFINATE custom RGB full 0x72 packet (%d bytes):\n", length);
-            char _hexrow[64];
-            for (int _b = 0; _b < length; _b += 16) {
-              int _hpos = 0;
-              for (int _j = _b; _j < _b + 16 && _j < length; _j++)
-                _hpos += snprintf(_hexrow + _hpos, sizeof(_hexrow) - _hpos, "%02hhx ", packet[_j]);
-              LOG(IAQL_LOG, LOG_NOTICE, "  [%03d] %s\n", _b, _hexrow);
-            }
-          }
         }
       }
 
