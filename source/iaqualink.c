@@ -58,7 +58,6 @@ bool push_iaqualink_cmd(unsigned char *cmd, int length) {
   _iaqua_q_length++;
 
   LOG(IAQL_LOG, LOG_INFO, "Queue cmd, size %d,  queu length=%d\n",length, _iaqua_q_length);
-  fprintf(stderr, "push_iaqualink_cmd: size=%d qlen=%d\n", length, _iaqua_q_length);
 
   //LOG(IAQL_LOG,LOG_DEBUG, "Added to message queue, position %d 0x%02hhx|0x%02hhx|0x%02hhx|0x%02hhx\n",_rssa_q_length-1,_rssa_queue[_rssa_q_length-1][0],_rssa_queue[_rssa_q_length-1][1],_rssa_queue[_rssa_q_length-1][2],_rssa_queue[_rssa_q_length-1][3]);
   return true;

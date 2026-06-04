@@ -736,17 +736,9 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer, emulation_type
     case IAQUALNK:
       //send_iaqualink_ack(rs_fd, packet_buffer);
       size = get_iaqualink_cmd(packet_buffer[PKT_CMD], &cmd);
-      fprintf(stderr, "IAQUALNK dispatch: cmd=0x%02hhx size=%d\n", packet_buffer[PKT_CMD], size);
       if (size == 2){
         send_extended_ack(rs_fd, cmd[0], cmd[1]);
       } else {
-        if (size > 0) {
-          char _iaq_hex[128]; int _iaq_pos = 0;
-          for (int _iaq_i = 0; _iaq_i < size && _iaq_pos < (int)sizeof(_iaq_hex)-4; _iaq_i++)
-            _iaq_pos += snprintf(_iaq_hex + _iaq_pos, sizeof(_iaq_hex) - _iaq_pos, "%02hhx ", cmd[_iaq_i]);
-          LOG(IAQL_LOG, LOG_NOTICE, "iAqualnk sendCmd (%d bytes): %s\n", size, _iaq_hex);
-          fprintf(stderr, "iAqualnk sendCmd (%d bytes): %s\n", size, _iaq_hex);
-        }
         send_jandy_command(rs_fd, cmd, size);
       }
       remove_iaqualink_cmd();
