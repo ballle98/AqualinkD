@@ -1785,7 +1785,7 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
       }
       return;
     } else if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
-      aq_programmer(AQ_SET_IAQLINK_LIGHTCOLOR_MODE, light->button, (light->lastValue > 0 ? light->lastValue : 1), extra_value, aqdata);
+      set_iaqualink_jandyinfinate_onoff(light->button, true);
       return;
     } else if (isIAQT_ENABLED) {
       aq_programmer(AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE, light->button, 0, extra_value, aqdata);
