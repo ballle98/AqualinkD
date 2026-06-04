@@ -1742,8 +1742,6 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
 
   clight_detail *light = getProgramableLight(aqdata, deviceIndex);
 
-  value = 3;
-
   if (light == NULL) {
     LOG(PANL_LOG,LOG_ERR, "Light mode control not configured for button %d\n", deviceIndex);
     return;
@@ -1786,6 +1784,9 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
         aq_programmer(AQ_SET_LIGHTCOLOR_MODE, light->button, 1, extra_value, aqdata);
       }
       return;
+    } else if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
+      aq_programmer(AQ_SET_IAQLINK_LIGHTCOLOR_MODE, light->button, (light->lastValue > 0 ? light->lastValue : 1), extra_value, aqdata);
+      return;
     } else if (isIAQT_ENABLED) {
       aq_programmer(AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE, light->button, 0, extra_value, aqdata);
       return;
@@ -1793,7 +1794,10 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
   } else if (value == 0) {
     // We simply need to turn the light off at this point, so use allbutton key as it's the quickest.
     // but can't turn off a virtual light.
-    if (light->button->led->state == ON && !isMASK_SET(light->button->special_mask, VIRTUAL_BUTTON)) {
+    if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
+      set_iaqualink_aux_state(light->button, false);
+      return;
+    } else if (light->button->led->state == ON && !isMASK_SET(light->button->special_mask, VIRTUAL_BUTTON)) {
       //DPRINTF("allbutton off");
       aq_send_allb_cmd(light->button->code);
       // Could also check isRSSA_ENABLED and use set_aqualink_rssadapter_aux_state(light->button, FALSE);
