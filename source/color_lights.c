@@ -139,7 +139,8 @@ char *_color_light_options[NUMBER_LIGHT_COLOR_TYPES][LIGHT_COLOR_OPTIONS] =
         "Fast Splash",
         "America The Beautiful",         // America the Beautiful  <- Think this is Infinite Water Colors. Need to check what version that changed.
         "Fat Tuesday",
-        "Disco Tech"
+        "Disco Tech",
+        "Custom"       // 0x10 = custom RGB color (set via RGB command, reported back by 0x72 status packet)
   },
   {/* 8 = Spare 2*/},
   {/* 9 = Spare 3*/},
