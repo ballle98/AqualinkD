@@ -1629,7 +1629,7 @@ void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int de
       return;
     }
     if (value == 0) {
-      set_iaqualink_aux_state(light->button, false);
+      set_iaqualink_jandyinfinate_onoff(light->button, false);
     } else {
       aq_programmer(AQ_SET_IAQLINK_LIGHT_BRIGHTNESS, light->button, value, 0, aqdata);
     }
@@ -1795,7 +1795,7 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
     // We simply need to turn the light off at this point, so use allbutton key as it's the quickest.
     // but can't turn off a virtual light.
     if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
-      set_iaqualink_aux_state(light->button, false);
+      set_iaqualink_jandyinfinate_onoff(light->button, false);
       return;
     } else if (light->button->led->state == ON && !isMASK_SET(light->button->special_mask, VIRTUAL_BUTTON)) {
       //DPRINTF("allbutton off");

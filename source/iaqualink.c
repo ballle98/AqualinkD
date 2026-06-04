@@ -120,6 +120,15 @@ unsigned char iAqalnkDevID(aqkey *button) {
     return button->rssd_code;
   }
 
+  // LC_JANDYINFINATE virtual buttons have no RS485 rssd_code; use lightID from config instead
+  if ( ((button->special_mask & (VIRTUAL_BUTTON | PROGRAM_LIGHT)) == (VIRTUAL_BUTTON | PROGRAM_LIGHT)) &&
+       button->special_mask_ptr != NULL ) {
+    clight_detail *light = (clight_detail *)button->special_mask_ptr;
+    if (light->lightType == LC_JANDYINFINATE && light->lightID != NUL) {
+      return light->lightID;
+    }
+  }
+
   switch (button->rssd_code) {
     case RS_SA_PUMP:
       return IAQ_PUMP;
@@ -335,8 +344,27 @@ void set_iaqualink_aux_state(aqkey *button, bool isON) {
      LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for button %s\n",button->label);
   }
 
-  // reset 
+  // reset
   _fullcmd[4] = 0x00;
+}
+
+void set_iaqualink_jandyinfinate_onoff(aqkey *button, bool isON) {
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s — is lightID set in config?\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = 0xFF;
+  _fullcmd[7] = isON ? 0xFF : 0x00;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
 }
 
 
