@@ -116,6 +116,7 @@ void _logPacket(logmask_t from, const unsigned char *packet_buffer, int packet_l
   bool is_iaql_sendcmd = (!is_read && packet_buffer[PKT_CMD] == 0x24 && packet_buffer[PKT_DEST] == 0x00);
 
   // No point in continuing if loglevel is < debug_serial and not writing to file
+  // iAqualnk sendCmd packets bypass this gate via is_iaql_sendcmd == false short-circuit
   if ( force == false &&
        error == false &&
        is_iaql_sendcmd == false &&
@@ -157,7 +158,7 @@ void _logPacket(logmask_t from, const unsigned char *packet_buffer, int packet_l
     LOG_LARGEMSG(from,LOG_WARNING, buff, len);
   else {
     if (is_iaql_sendcmd) {
-      LOG_LARGEMSG(from, LOG_NOTICE, buff, len);
+      LOG_LARGEMSG(IAQL_LOG, LOG_NOTICE, buff, len);
     } else if (force) {
       LOG_LARGEMSG(from, getSystemLogLevel()<LOG_DEBUG?getSystemLogLevel():LOG_DEBUG, buff, len);
       //LOG_LARGEMSG(from, LOG_DEBUG, buff, len);
