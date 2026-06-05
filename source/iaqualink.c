@@ -339,22 +339,7 @@ void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
   _fullcmd[8] = 0x00;
 }
 
-void set_iaqualink_aux_state(aqkey *button, bool isON) {
-
-  _fullcmd[4] = iAqalnkDevID(button);
-
-  if (_fullcmd[4] != 0xFF) {
-    push_iaqualink_cmd(_cmd_readyCommand, 2);
-    push_iaqualink_cmd(_fullcmd, 19);
-  } else {
-     LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for button %s\n",button->label);
-  }
-
-  // reset
-  _fullcmd[4] = 0x00;
-}
-
-void set_iaqualink_jandyinfinate_onoff(aqkey *button, bool isON) {
+void set_iaqualink_light_onoff(aqkey *button, bool isON) {
   _fullcmd[4] = iAqalnkDevID(button);
 
   if (_fullcmd[4] == 0xFF) {
@@ -373,6 +358,20 @@ void set_iaqualink_jandyinfinate_onoff(aqkey *button, bool isON) {
   _fullcmd[7] = 0x00;
 }
 
+void set_iaqualink_aux_state(aqkey *button, bool isON) {
+
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] != 0xFF) {
+    push_iaqualink_cmd(_cmd_readyCommand, 2);
+    push_iaqualink_cmd(_fullcmd, 19);
+  } else {
+     LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for button %s\n",button->label);
+  }
+
+  // reset
+  _fullcmd[4] = 0x00;
+}
 
 // AQ_SET_IAQTOUCH_CHILLER_TEMP
 // AQ_SET_IAQLINK_CHILLER_TEMP //

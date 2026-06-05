@@ -747,7 +747,7 @@ void _aq_programmer_(program_type r_type, char *args, aqkey *button, int value, 
       return; // No need to create this as thread.
       break;
     case AQ_SET_IAQLINK_JANDYINFINATE_ONOFF:
-      set_iaqualink_jandyinfinate_onoff(button, value != 0);
+      set_iaqualink_light_onoff(button, value != 0);
       return; // No need to create this as thread.
       break;
     default:
