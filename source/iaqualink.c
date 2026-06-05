@@ -317,13 +317,15 @@ void set_iaqualink_light_brightness(aqkey *button, int value)
 
 void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
 {
-  _fullcmd[4] = iAqalnkDevID(button);
+  unsigned char devID = iAqalnkDevID(button);
 
-  if (_fullcmd[4] == 0xFF) {
+  if (devID == 0xFF) {
     LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
     return;
   }
 
+  // RGB command uses devID+2 (e.g. lightID=0x61 → RGB devID=0x63)
+  _fullcmd[4] = devID + 2;
   _fullcmd[6] = (unsigned char)r;
   _fullcmd[7] = (unsigned char)g;
   _fullcmd[8] = (unsigned char)b;
