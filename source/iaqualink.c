@@ -285,12 +285,14 @@ void set_iaqualink_light_colormode(aqkey *button, int value)
   }
 
   _fullcmd[6] = (unsigned char)value;
+  _fullcmd[7] = 0x64; // 100% brightness when setting a color mode
 
   push_iaqualink_cmd(_cmd_readyCommand, 2);
   push_iaqualink_cmd(_fullcmd, 19);
 
   _fullcmd[4] = 0x00;
   _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
 }
 
 void set_iaqualink_light_brightness(aqkey *button, int value)
