@@ -1628,11 +1628,7 @@ void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int de
       LOG(PANL_LOG, LOG_ERR, "Brightness for Jandy Infinite light requires iAqualink (enable_iaqualink=yes)\n");
       return;
     }
-    if (value == 0) {
-      aq_programmer(AQ_SET_IAQLINK_JANDYINFINATE_ONOFF, light->button, 0, 0, aqdata);
-    } else {
-      aq_programmer(AQ_SET_IAQLINK_LIGHT_BRIGHTNESS, light->button, value, 0, aqdata);
-    }
+    aq_programmer(AQ_SET_IAQLINK_LIGHT_BRIGHTNESS, light->button, value, 0, aqdata);
     return;
   }
 
