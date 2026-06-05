@@ -1629,7 +1629,7 @@ void programDeviceLightBrightness(struct aqualinkdata *aqdata, int value, int de
       return;
     }
     if (value == 0) {
-      set_iaqualink_jandyinfinate_onoff(light->button, false);
+      aq_programmer(AQ_SET_IAQLINK_JANDYINFINATE_ONOFF, light->button, 0, 0, aqdata);
     } else {
       aq_programmer(AQ_SET_IAQLINK_LIGHT_BRIGHTNESS, light->button, value, 0, aqdata);
     }
@@ -1785,7 +1785,7 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
       }
       return;
     } else if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
-      set_iaqualink_jandyinfinate_onoff(light->button, true);
+      aq_programmer(AQ_SET_IAQLINK_JANDYINFINATE_ONOFF, light->button, 1, 0, aqdata);
       return;
     } else if (isIAQT_ENABLED) {
       aq_programmer(AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE, light->button, 0, extra_value, aqdata);
@@ -1796,7 +1796,7 @@ void programDeviceLightMode(struct aqualinkdata *aqdata, int value, int deviceIn
     // but can't turn off a virtual light.
     if (isIAQL_ACTIVE && light->lightType == LC_JANDYINFINATE) {
       LOG(PANL_LOG, LOG_NOTICE, "Turning off Jandy Infinite light '%s' via iAqualink\n", light->button->label);
-      set_iaqualink_jandyinfinate_onoff(light->button, false);
+      aq_programmer(AQ_SET_IAQLINK_JANDYINFINATE_ONOFF, light->button, 0, 0, aqdata);
       return;
     } else if (light->button->led->state == ON && !isMASK_SET(light->button->special_mask, VIRTUAL_BUTTON)) {
       //DPRINTF("allbutton off");

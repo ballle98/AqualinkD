@@ -117,9 +117,10 @@ typedef enum {
   AQ_SET_IAQLINK_POOL_HEATER_TEMP,  // Same as above but using iAqualink not AqualinkTouch
   AQ_SET_IAQLINK_SPA_HEATER_TEMP,   // Same as above but using iAqualink not AqualinkTouch
   AQ_SET_IAQLINK_CHILLER_TEMP,
-  AQ_SET_IAQLINK_LIGHTCOLOR_MODE,   // iAqualink direct color mode for Jandy Infinite Water Colors
-  AQ_SET_IAQLINK_LIGHT_BRIGHTNESS,  // iAqualink direct brightness for Jandy Infinite Water Colors
-  AQ_SET_IAQLINK_LIGHT_RGB,         // iAqualink direct RGB color for Jandy Infinite Water Colors
+  AQ_SET_IAQLINK_LIGHTCOLOR_MODE,      // iAqualink direct color mode for Jandy Infinite Water Colors
+  AQ_SET_IAQLINK_LIGHT_BRIGHTNESS,     // iAqualink direct brightness for Jandy Infinite Water Colors
+  AQ_SET_IAQLINK_LIGHT_RGB,            // iAqualink direct RGB color for Jandy Infinite Water Colors
+  AQ_SET_IAQLINK_JANDYINFINATE_ONOFF,  // iAqualink direct on/off for Jandy Infinite Water Colors
   AQ_SET_IAQTOUCH_LIGHTCOLOR_MODE,
   // ******** RS Serial Adapter Delimiter make sure to change MAX/MIN below
   AQ_GET_RSSADAPTER_SETPOINTS,
