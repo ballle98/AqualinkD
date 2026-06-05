@@ -365,9 +365,6 @@ void set_iaqualink_jandyinfinate_onoff(aqkey *button, bool isON) {
   _fullcmd[6] = 0xFF;
   _fullcmd[7] = isON ? 0xFF : 0x00;
 
-  LOG(IAQL_LOG, LOG_NOTICE, "Jandy Infinite %s: devID=0x%02hhx [6]=0x%02hhx [7]=0x%02hhx\n",
-      isON ? "ON" : "OFF", _fullcmd[4], _fullcmd[6], _fullcmd[7]);
-
   push_iaqualink_cmd(_cmd_readyCommand, 2);
   push_iaqualink_cmd(_fullcmd, 19);
 
