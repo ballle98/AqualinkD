@@ -12,7 +12,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
 
 void set_iaqualink_aux_state(aqkey *button, bool isON);
 void set_iaqualink_heater_setpoint(int value, SP_TYPE type);
-void set_iaqualink_light_onoff(aqkey *button, bool isON);
 void set_iaqualink_light_colormode(aqkey *button, int value);
 void set_iaqualink_light_brightness(aqkey *button, int value);
 void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b);

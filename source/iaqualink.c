@@ -339,25 +339,6 @@ void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
   _fullcmd[8] = 0x00;
 }
 
-void set_iaqualink_light_onoff(aqkey *button, bool isON) {
-  _fullcmd[4] = iAqalnkDevID(button);
-
-  if (_fullcmd[4] == 0xFF) {
-    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s — is lightID set in config?\n", button->label);
-    return;
-  }
-
-  _fullcmd[6] = 0xFF;
-  _fullcmd[7] = isON ? 0xFF : 0x00;
-
-  push_iaqualink_cmd(_cmd_readyCommand, 2);
-  push_iaqualink_cmd(_fullcmd, 19);
-
-  _fullcmd[4] = 0x00;
-  _fullcmd[6] = 0x00;
-  _fullcmd[7] = 0x00;
-}
-
 void set_iaqualink_aux_state(aqkey *button, bool isON) {
 
   _fullcmd[4] = iAqalnkDevID(button);
