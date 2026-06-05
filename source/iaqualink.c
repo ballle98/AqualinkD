@@ -302,13 +302,15 @@ void set_iaqualink_light_brightness(aqkey *button, int value)
     return;
   }
 
-  _fullcmd[6] = (unsigned char)value;
+  _fullcmd[6] = 0xFF;
+  _fullcmd[7] = (unsigned char)value;
 
   push_iaqualink_cmd(_cmd_readyCommand, 2);
   push_iaqualink_cmd(_fullcmd, 19);
 
   _fullcmd[4] = 0x00;
   _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
 }
 
 void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
