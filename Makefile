@@ -41,6 +41,9 @@ DBGFLAGS = -g -O0 -Wall -D AQ_DEBUG -D AQ_TM_DEBUG
 #MGFLAGS = -D MG_TLS=2 #(2=MG_TLS_OPENSSL. 3=MG_TLS_BUILTIN) --or--  -DMG_TLS=MG_TLS_BUILTIN
 MGFLAGS = -D MG_TLS=3 -D MG_ENABLE_SSI=0
 
+GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
+$(info GIT_HASH: $(GIT_HASH) )
+
 # Detect OS and set some specifics
 ifeq ($(OS),Windows_NT)
    # Windows Make.
@@ -100,9 +103,9 @@ endif
 
 
 # Put all flags together.
-CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS)
-DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS)
+CFLAGS = $(GCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DFLAGS = $(DGCCFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
+DBG_CFLAGS = $(DBGFLAGS) $(AQ_FLAGS) $(MGFLAGS) -DGIT_HASH="\"$(GIT_HASH)\""
 
 # Other sources.
 DBG_SRC = $(SRCS) debug_timer.c
@@ -406,5 +409,3 @@ clean: clean-buildfiles
 
 clean-buildfiles:
 	$(RM) $(wildcard *.o) $(wildcard *~) $(OBJ_FILES) $(DBG_OBJ_FILES) $(SL_OBJ_FILES) $(DD_OBJ_FILES) $(DR_OBJ_FILES) $(OBJ_FILES_ARMHF) $(OBJ_FILES_ARM64) $(OBJ_FILES_AMD64) $(SL_OBJ_FILES_ARMHF) $(SL_OBJ_FILES_ARM64) $(SL_OBJ_FILES_AMD64)
-
-

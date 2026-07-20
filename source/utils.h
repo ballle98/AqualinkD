@@ -91,6 +91,7 @@ void setLoggingPrms(int level , bool deamonized, char* log_file, char *error_mes
 int getLogLevel(logmask_t from);
 int getSystemLogLevel();
 void setSystemLogLevel( int level);
+void setMsecTimestampLog(bool enabled);
 void daemonise ( char *pidFile, void (*main_function)(void) );
 //void debugPrint (char *format, ...);
 

@@ -527,11 +527,9 @@ struct aqualinkdata
   int spa_heater_index;
   int solar_heater_index;
   #endif
-  // Timing for DEBUG
-  #ifdef AQ_DEBUG
+  // Timing for millisecond timestamp logging
   struct timespec last_active_time;
   struct timespec start_active_time;
-  #endif
 
   // Overcome color light bug, by reconnecting allbutton panel.
   //bool reconnectAllButton;

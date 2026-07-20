@@ -225,6 +225,15 @@ void init_parameters (struct aqconfig * parms)
 
 
   _numCfgParams++;
+  _cfgParams[_numCfgParams].value_ptr = &_aqconfig_.log_msec_ts;
+  _cfgParams[_numCfgParams].value_type = CFG_BOOL;
+  _cfgParams[_numCfgParams].name = CFG_N_log_msec_ts;
+  _cfgParams[_numCfgParams].config_mask |= CFG_GRP_ADVANCED;
+  _cfgParams[_numCfgParams].config_mask |= CFG_FORCE_RESTART;
+  _cfgParams[_numCfgParams].default_value = (void *)&_dcfg_false;
+
+
+  _numCfgParams++;
   _cfgParams[_numCfgParams].value_ptr = &_aqconfig_.mg_log_level;
   _cfgParams[_numCfgParams].value_type = CFG_INT; // Set with _aqconfig_.log_level = text2elevel(cleanalloc(value));
   _cfgParams[_numCfgParams].name = CFG_N_MG_log_level;
