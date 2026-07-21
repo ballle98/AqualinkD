@@ -832,7 +832,7 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
   struct timespec max_wait;
 
   clock_gettime(CLOCK_REALTIME, &max_wait);
-  max_wait.tv_sec += 30;
+  max_wait.tv_sec += 120;
 
   // Make sure to update UI
   SET_DIRTY(threadCtrl->aqdata->is_dirty);
@@ -848,18 +848,18 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
     pthread_exit(0);
   }
 */
-  pthread_mutex_lock(&threadCtrl->aqdata->active_thread.thread_mutex);
+  pthread_mutex_lock(&threadCtrl->aqdata->active_thread.lifecycle_mutex);
   while (threadCtrl->aqdata->active_thread.thread_id != 0) {
     LOG(PROG_LOG, LOG_DEBUG, "Thread %p (%s) sleeping, waiting for thread %p (%s) to finish\n",
                 &threadCtrl->thread_id, ptypeName(type),
                 threadCtrl->aqdata->active_thread.thread_id, ptypeName(threadCtrl->aqdata->active_thread.ptype));
-    if ((ret = pthread_cond_timedwait(&threadCtrl->aqdata->active_thread.thread_cond,
-                                      &threadCtrl->aqdata->active_thread.thread_mutex, &max_wait))) {
+    if ((ret = pthread_cond_timedwait(&threadCtrl->aqdata->active_thread.lifecycle_cond,
+                                      &threadCtrl->aqdata->active_thread.lifecycle_mutex, &max_wait))) {
       LOG(PROG_LOG, LOG_ERR, "Thread %p (%s) err %s waiting for thread %p (%s) to finish\n",
                   &threadCtrl->thread_id, ptypeName(type), strerror(ret),
                   threadCtrl->aqdata->active_thread.thread_id,
                   ptypeName(threadCtrl->aqdata->active_thread.ptype));
-      pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.thread_mutex);
+      pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.lifecycle_mutex);
       free(threadCtrl);
       pthread_exit(0);
     }
@@ -883,12 +883,12 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
 
   // Make sure to update UI
   SET_DIRTY(threadCtrl->aqdata->is_dirty);
-  pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.thread_mutex);
+  pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.lifecycle_mutex);
 }
 
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
-  pthread_mutex_lock(&threadCtrl->aqdata->active_thread.thread_mutex);
+  pthread_mutex_lock(&threadCtrl->aqdata->active_thread.lifecycle_mutex);
   if (_aqconfig_.log_msec_ts) {
     struct timespec elapsed;
     clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->last_active_time);
@@ -903,8 +903,8 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
   }
   threadCtrl->aqdata->active_thread.thread_id = 0;
   threadCtrl->aqdata->active_thread.ptype = AQP_NULL;
-  pthread_cond_signal(&threadCtrl->aqdata->active_thread.thread_cond);
-  pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.thread_mutex);
+  pthread_cond_broadcast(&threadCtrl->aqdata->active_thread.lifecycle_cond);
+  pthread_mutex_unlock(&threadCtrl->aqdata->active_thread.lifecycle_mutex);
   threadCtrl->thread_id = 0;
   // Force update, change display message
   //threadCtrl->aqdata->is_dirty = true;
