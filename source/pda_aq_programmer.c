@@ -241,10 +241,60 @@ bool wait_pda_selected_item(struct aqualinkdata *aqdata)
    return true;
 }
 
+static bool waitForPDAMessageTypes3(struct aqualinkdata *aqdata,
+                                    unsigned char mtype1, unsigned char mtype2,
+                                    unsigned char mtype3, int numMessageReceived)
+{
+  int i = 0;
+
+  pthread_mutex_lock(&aqdata->active_thread.thread_mutex);
+  while (++i <= numMessageReceived) {
+    if (aqdata->last_packet_type == mtype1 ||
+        aqdata->last_packet_type == mtype2 ||
+        aqdata->last_packet_type == mtype3) {
+      break;
+    }
+    pthread_cond_wait(&aqdata->active_thread.thread_cond,
+                      &aqdata->active_thread.thread_mutex);
+  }
+  pthread_mutex_unlock(&aqdata->active_thread.thread_mutex);
+
+  return aqdata->last_packet_type == mtype1 ||
+         aqdata->last_packet_type == mtype2 ||
+         aqdata->last_packet_type == mtype3;
+}
+
 bool waitForPDAnextMenu(struct aqualinkdata *aqdata) {
-  if (!waitForPDAMessageType(aqdata,CMD_PDA_CLEAR,10))
+  pda_menu_type menu;
+
+  LOG(PDA_LOG,LOG_DEBUG, "waitForPDAnextMenu\n");
+  if (!waitForPDAMessageTypes(aqdata,CMD_PDA_CLEAR,CMD_STATUS,10)) {
+    LOG(PDA_LOG,LOG_ERR, "waitForPDAnextMenu - no CLEAR or STATUS\n");
     return false;
-  return waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_PDA_HIGHLIGHTCHARS,15);
+  } else if (aqdata->last_packet_type == CMD_STATUS) {
+    // If a STATUS is received something is probably off, either the last key
+    // sent was lost or we missed the menu change.
+    LOG(PDA_LOG,LOG_WARNING, "waitForPDAnextMenu - received STATUS instead of CLEAR\n");
+    return true;
+  } else if (!waitForPDAMessageTypes3(aqdata,CMD_PDA_HIGHLIGHT,
+                                      CMD_PDA_HIGHLIGHTCHARS,CMD_STATUS,15)) {
+    LOG(PDA_LOG,LOG_ERR, "waitForPDAnextMenu - no HIGHLIGHT or STATUS\n");
+    return false;
+  }
+
+  if (aqdata->last_packet_type == CMD_STATUS) {
+    // The firmware-version and status menus do not have a highlight.
+    LOG(PDA_LOG,LOG_NOTICE, "waitForPDAnextMenu - received STATUS instead of HIGHLIGHT\n");
+  } else if ((aqdata->last_packet_type == CMD_PDA_HIGHLIGHTCHARS) &&
+             (((menu = pda_m_type()) == PM_EQUIPTMENT_CONTROL) ||
+              (menu == PM_HOME) || (menu == PM_BUILDING_HOME))) {
+    // Flashing state for filter pump and spa mode is done with HIGHLIGHTCHARS.
+    if (!waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_STATUS,10)) {
+      LOG(PDA_LOG,LOG_ERR, "waitForPDAnextMenu - EQUIPTMENT_CONTROL no HIGHLIGHT or STATUS\n");
+      return false;
+    }
+  }
+  return true;
 }
 
 bool loopover_devices(struct aqualinkdata *aqdata) {
@@ -694,9 +744,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         } else {
           send_pda_cmd(KEY_PDA_SELECT);
 	        while (get_pda_queue_length() > 0) { delay(500); }
-          if (!waitForPDAMessageType(aqdata,CMD_PDA_HIGHLIGHT,20)) {
-            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",button->label);
-          }
+          waitForPDAnextMenu(aqdata);
         }
       } else if ( isPLIGHT(button->special_mask) ) {
         // THIS EXTRA ENTER IS ONLY FOR ON, NOT OFF
@@ -713,8 +761,13 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_MSG_LONG,2)) {
-              LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",button->label);
+          if (!waitForPDAMessageType(aqdata,CMD_STATUS,15)) {
+              LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_STATUS\n",button->label);
+          }
+          // Check for a delayed-start status screen.
+          if (pda_m_type() == PM_TURN_ON_AFTER_DELAY) {
+            send_pda_cmd(KEY_PDA_BACK);
+            waitForPDAnextMenu(aqdata);
           }
       }
       
@@ -790,9 +843,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         } else {
           send_pda_cmd(KEY_PDA_SELECT);
 	        while (get_pda_queue_length() > 0) { delay(500); }
-          if (!waitForPDAMessageType(aqdata,CMD_PDA_HIGHLIGHT,20)) {
-            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",aqdata->aqbuttons[device].label);
-          }
+          waitForPDAnextMenu(aqdata);
         }
       } else if ( isPLIGHT(aqdata->aqbuttons[device].special_mask) ) {
         // THIS EXTRA ENTER IS ONLY FOR ON, NOT OFF
@@ -809,9 +860,14 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_MSG_LONG,2)) {
-              LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_MSG_LONG\n",
+          if (!waitForPDAMessageType(aqdata,CMD_STATUS,15)) {
+              LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_STATUS\n",
                          aqdata->aqbuttons[device].label);
+          }
+          // Check for a delayed-start status screen.
+          if (pda_m_type() == PM_TURN_ON_AFTER_DELAY) {
+            send_pda_cmd(KEY_PDA_BACK);
+            waitForPDAnextMenu(aqdata);
           }
       }
       
