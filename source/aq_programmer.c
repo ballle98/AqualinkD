@@ -661,7 +661,6 @@ void _aq_programmer_(program_type r_type, char *args, aqkey *button, int value, 
       LOG(PROG_LOG, LOG_ERR, "Selected Programming mode '%s' '%d' not supported with PDA control panel\n",ptypeName(type),type);
       return;
     }
-    pda_reset_sleep();
   } 
   else if (isPDA_PANEL && isPDA_IAQT)
   {
@@ -856,12 +855,16 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
   //waitfor_queue2empty();
+  struct timespec finished_at;
+  clock_gettime(CLOCK_REALTIME, &finished_at);
+  pthread_mutex_lock(&threadCtrl->aqdata->last_active_time_mutex);
+  threadCtrl->aqdata->last_active_time = finished_at;
+  pthread_mutex_unlock(&threadCtrl->aqdata->last_active_time_mutex);
   #ifndef AQ_DEBUG
   LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished\n",threadCtrl->aqdata->active_thread.ptype, threadCtrl->thread_id,ptypeName(threadCtrl->aqdata->active_thread.ptype));
   #else
   struct timespec elapsed;
-  clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->last_active_time);
-  timespec_subtract(&elapsed, &threadCtrl->aqdata->last_active_time, &threadCtrl->aqdata->start_active_time);
+  timespec_subtract(&elapsed, &finished_at, &threadCtrl->aqdata->start_active_time);
   LOG(PROG_LOG, LOG_NOTICE, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
              threadCtrl->aqdata->active_thread.ptype,
              threadCtrl->aqdata->active_thread.thread_id,

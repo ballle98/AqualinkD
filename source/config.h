@@ -99,6 +99,7 @@ struct aqconfig
   bool override_freeze_protect;
 #ifdef AQ_PDA
   bool pda_sleep_mode;
+  bool pda_sleep_with_websock;
   bool pda_force_home_onprogram;
 #endif
   bool convert_mqtt_temp;
@@ -300,6 +301,7 @@ int _numCfgParams;
 
 #define CFG_N_override_freeze_protect           "override_freeze_protect"
 #define CFG_N_pda_sleep_mode                    "pda_sleep_mode"
+#define CFG_N_pda_sleep_with_websock             "pda_sleep_with_websock"
 #define CFG_N_light_programming_interface       "light_programming_interface"
 #define CFG_N_pda_force_home_onprogram          "pda_force_home_onprogram"
 

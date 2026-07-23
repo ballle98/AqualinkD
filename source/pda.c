@@ -31,6 +31,7 @@
 #include "packetLogger.h"
 #include "devices_jandy.h"
 #include "rs_msg_utils.h"
+#include "timespec_subtract.h"
 
 // Used in equiptment_update_cycle() for additional items on EQUIPMENT STATUS
 // TOTAL_BUTTONS is at most 20 so bits 21-31 should be available
@@ -39,115 +40,63 @@
 
 
 // static struct aqualinkdata _aqualink_data;
-static struct aqualinkdata *_aqualink_data;
+static struct aqualinkdata *_aqualink_data = NULL;
+static struct aqconfig *_config_parameters = NULL;
 static unsigned char _last_packet_type;
-static unsigned long _pda_loop_cnt = -0;
 static bool _initWithRS = false;
 static bool _first_status_after_clear = false;
+static bool _pda_first_probe_recvd = false;
 
-// Each RS message is around 0.25 seconds apart
-//#define PDA_SLEEP_FOR 120 //
-#define PDA_SLEEP_FOR 40 //
-#define PDA_WAKE_FOR 10 // 
-#define PDA_IGNORE_NO_STATUS_PAGE 40 // 36 seems to be the status loop
+#define PDA_SLEEP_FOR 30
 
 
 
-void init_pda(struct aqualinkdata *aqdata)
+void init_pda(struct aqualinkdata *aqdata, struct aqconfig *aqconf)
 {
   _aqualink_data = aqdata;
+  _config_parameters = aqconf;
   //set_pda_mode(true);
 }
 
 
 bool pda_shouldSleep() {
-  static bool sawHome = false;
-  static bool sawStatus = false;
-  static bool inSleep = false;
+  struct timespec now;
+  struct timespec elapsed;
+  struct timespec last_active;
 
-  if (pda_m_type() == PM_HOME)
-    sawHome = true;
-
-  if (pda_m_type() == PM_EQUIPTMENT_STATUS)
-    sawStatus = true;
+  // Do not answer a non-probe packet after restart before the panel has
+  // rediscovered this PDA address.
+  if (!_pda_first_probe_recvd) {
+    return true;
+  } else if (!_config_parameters->pda_sleep_mode) {
+    return false;
+  }
   
-  // NSF NEED TO CHECK ACTIVE THREADS.
   if (_aqualink_data->active_thread.thread_id != 0) {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as thread %d,%p is active\n",
                _aqualink_data->active_thread.ptype,
                _aqualink_data->active_thread.thread_id);
-
-    _pda_loop_cnt = 0;
     return false;
   }
 
-  // Last see if there are any open websockets. (don't sleep if the web UI is open)
-  if ( _aqualink_data->open_websockets > 0 ) {
-    _pda_loop_cnt = 0;
+  // By default an open web UI keeps the PDA awake.  The optional websocket
+  // sleep mode allows normal sleep after the first connection wakes it.
+  if ((!_config_parameters->pda_sleep_with_websock) &&
+      (_aqualink_data->open_websockets > 0)) {
     LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
     return false;
   }
 
-  // Only sleep if we are on home page
-  if (pda_m_type() != PM_HOME /*&& pda_m_type() != PM_BUILDING_HOME*/) {
-    _pda_loop_cnt = 0;
-    LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep not on home page\n");
-    return false;
-  }
-
-  _pda_loop_cnt++;
-
-  if (inSleep == false && 
-     (sawHome == false || ( sawStatus == false && _pda_loop_cnt <= PDA_IGNORE_NO_STATUS_PAGE))){
-    LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep haven't seen both Home and Status pages\n");
-    return false;
-  } else if (inSleep == false &&
-            (sawHome == false || ( sawStatus == false && _pda_loop_cnt > PDA_IGNORE_NO_STATUS_PAGE))){
-    // We hit the timeout waiting for status page (ie no devices are on), so reset counter
-    LOG(PDA_LOG,LOG_DEBUG, "PDA Allowing sleep - timeout waiting for Status page (all devices must be off)\n");
-    _pda_loop_cnt = PDA_WAKE_FOR;
-  }
-
-  //_pda_loop_cnt++;
-
-  LOG(PDA_LOG,LOG_DEBUG, "PDA loop count %d, wake between 0->%d, sleep %d->%d\n",_pda_loop_cnt, PDA_WAKE_FOR, PDA_WAKE_FOR, (PDA_WAKE_FOR + PDA_SLEEP_FOR));
-  if (_pda_loop_cnt < PDA_WAKE_FOR) {
-    //inSleep == false;
-    return false;
-  } else if (_pda_loop_cnt > PDA_WAKE_FOR + PDA_SLEEP_FOR) {
-    _pda_loop_cnt = 0;
-    inSleep = false;
-    return false;
-  }
-
-  sawHome = false;
-  sawStatus = false;
-  inSleep = true;
-
-  return true;
-}
-
-/*
-bool pda_shouldSleep() {
-  //LOG(PDA_LOG,LOG_DEBUG, "PDA loop count %d, will sleep at %d\n",_pda_loop_cnt,PDA_LOOP_COUNT);
-  if (_pda_loop_cnt++ < PDA_LOOP_COUNT) {
-    return false;
-  } else if (_pda_loop_cnt > PDA_LOOP_COUNT*2) {
-    _pda_loop_cnt = 0;
+  clock_gettime(CLOCK_REALTIME, &now);
+  pthread_mutex_lock(&_aqualink_data->last_active_time_mutex);
+  last_active = _aqualink_data->last_active_time;
+  pthread_mutex_unlock(&_aqualink_data->last_active_time_mutex);
+  timespec_subtract(&elapsed, &now, &last_active);
+  if (elapsed.tv_sec > PDA_SLEEP_FOR) {
     return false;
   }
 
   return true;
-}
-*/
-
-void pda_wake() {
-  pda_reset_sleep();
-  // Add and specic code to run when wake is called. 
-}
-
-void pda_reset_sleep() {
-  _pda_loop_cnt = 0;
 }
 
 unsigned char get_last_pda_packet_type()
@@ -916,6 +865,10 @@ bool process_pda_packet(unsigned char *packet, int length)
 
   switch (packet[PKT_CMD])
   {
+    case CMD_PROBE:
+      _pda_first_probe_recvd = true;
+    break;
+
     case CMD_ACK:
       LOG(PDA_LOG,LOG_DEBUG, "RS Received ACK length %d.\n", length);
     break;
@@ -1055,17 +1008,11 @@ bool process_pda_packet(unsigned char *packet, int length)
           LOG(PDA_LOG,LOG_DEBUG, "**** PDA INIT ****\n");
         //aq_programmer(AQ_PDA_INIT, NULL, _aqualink_data);
           queueGetProgramData(AQUAPDA, _aqualink_data);
-          delay(50);  // Make sure this one runs first.
 #ifdef BETA_PDA_AUTOLABEL
           if (_aqconfig_->use_panel_aux_labels)
              aq_programmer(AQ_GET_AUX_LABELS, NULL, _aqualink_data);
 #endif
-#ifdef NEW_AQ_PROGRAMMER
-          aq_programmer(AQ_PDA_WAKE_INIT, NULL, AQP_NULL, AQP_NULL, _aqualink_data);
-#else
-          aq_programmer(AQ_PDA_WAKE_INIT, NULL, _aqualink_data);
-#endif
-        } else {
+        } else if (_aqualink_data->active_thread.thread_id == 0) {
           LOG(PDA_LOG,LOG_DEBUG, "**** PDA WAKE INIT ****\n");
 #ifdef NEW_AQ_PROGRAMMER
           aq_programmer(AQ_PDA_WAKE_INIT, NULL, AQP_NULL, AQP_NULL, _aqualink_data);
@@ -1094,4 +1041,3 @@ bool process_pda_packet(unsigned char *packet, int length)
 
   return rtn;
 }
-

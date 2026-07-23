@@ -527,9 +527,10 @@ struct aqualinkdata
   int spa_heater_index;
   int solar_heater_index;
   #endif
-  // Timing for DEBUG
-  #ifdef AQ_DEBUG
+  // Last activity controls PDA sleep and is also used for debug timing.
   struct timespec last_active_time;
+  pthread_mutex_t last_active_time_mutex;
+  #ifdef AQ_DEBUG
   struct timespec start_active_time;
   #endif
 

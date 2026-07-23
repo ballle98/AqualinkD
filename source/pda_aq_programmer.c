@@ -1086,12 +1086,10 @@ void *set_aqualink_PDA_init( void *ptr )
   else {
     LOG(PDA_LOG,LOG_ERR, "PDA Init :- should be called when on FW VERSION menu.\n");
   }
-/* 
   // Get status of all devices
   if (! loopover_devices(aqdata)) {
     LOG(PDA_LOG,LOG_ERR, "PDA Init :- can't find menu\n");
   }
-*/
 
   // Get heater setpoints
   if (! _get_PDA_aqualink_pool_spa_heater_temps(aqdata)) {
@@ -1106,8 +1104,6 @@ void *set_aqualink_PDA_init( void *ptr )
   }
 
   goto_pda_menu(aqdata, PM_HOME);
-
-  pda_reset_sleep();
 
   cleanAndTerminateThread(threadCtrl);
 
@@ -1131,7 +1127,7 @@ void *set_aqualink_PDA_wakeinit( void *ptr )
 
   // Get status of all devices
   if (! loopover_devices(aqdata)) {
-    LOG(PDA_LOG,LOG_ERR, "PDA Init :- can't find menu\n");
+    LOG(PDA_LOG,LOG_ERR, "PDA Wake Init :- can't find menu\n");
   }
 
   cleanAndTerminateThread(threadCtrl);
