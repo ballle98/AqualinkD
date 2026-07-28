@@ -26,9 +26,17 @@
 #include "utils.h"
 
 static int _hlightindex = -1;
+static int _hlightcharlineindex = -1;
 static int _hlightcharindexstart = -1;
 static int _hlightcharindexstop = -1;
 static char _menu[PDA_LINES][AQ_MSGLEN+1];
+
+static void clear_hlightchars()
+{
+  _hlightcharlineindex = -1;
+  _hlightcharindexstart = -1;
+  _hlightcharindexstop = -1;
+}
 
 void print_menu()
 {
@@ -43,8 +51,12 @@ void print_menu()
     LOG(PDA_LOG,LOG_DEBUG, "PDA Menu highlighted line#=%d line='%s'\n",_hlightindex,_menu[_hlightindex]);
   }
 
-  if (_hlightcharindexstart > -1) {
-    LOG(PDA_LOG,LOG_DEBUG, "PDA Menu highlighted characters line#=%d numer=%d start=%d end=%d actual='%.*s'\n",_hlightindex,(_hlightcharindexstop-_hlightcharindexstart),_hlightcharindexstart,_hlightcharindexstop,(_hlightcharindexstop-_hlightcharindexstart),&_menu[_hlightindex][_hlightcharindexstart+1]);
+  if (_hlightcharlineindex > -1) {
+    LOG(PDA_LOG,LOG_DEBUG, "PDA Menu highlighted characters line#=%d number=%d start=%d end=%d actual='%.*s'\n",
+        _hlightcharlineindex, (_hlightcharindexstop-_hlightcharindexstart),
+        _hlightcharindexstart, _hlightcharindexstop,
+        (_hlightcharindexstop-_hlightcharindexstart),
+        &_menu[_hlightcharlineindex][_hlightcharindexstart]);
   }
 }
 
@@ -69,12 +81,19 @@ char *pda_m_line(int index)
 
 char *pda_m_hlightchars(int *len)
 {
-  if (_hlightindex <= -1) {
+  if (len == NULL) {
+    return NULL;
+  }
+
+  if (_hlightcharlineindex < 0 || _hlightcharlineindex >= PDA_LINES ||
+      _hlightcharindexstart < 0 || _hlightcharindexstart >= AQ_MSGLEN ||
+      _hlightcharindexstop <= _hlightcharindexstart ||
+      _hlightcharindexstop > AQ_MSGLEN) {
     *len = 0;
     return NULL;
   }
   *len = _hlightcharindexstop - _hlightcharindexstart;
-  return &_menu[_hlightindex][_hlightcharindexstart];
+  return &_menu[_hlightcharlineindex][_hlightcharindexstart];
 }
 
 // Find exact menu item
@@ -219,12 +238,15 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
   int index = 0;
   static bool printed_page = false;
 
+  if (packet == NULL || length <= PKT_CMD) {
+    LOG(PDA_LOG,LOG_WARNING, "Ignoring truncated PDA menu packet of length %d\n", length);
+    return false;
+  }
 
   switch (packet[PKT_CMD]) {
     case CMD_PDA_CLEAR:
       _hlightindex = -1;
-      _hlightcharindexstart = -1;
-      _hlightcharindexstop = -1;
+      clear_hlightchars();
       memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
       printed_page = false;
     break;
@@ -256,14 +278,20 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
     break;
     case CMD_PDA_HIGHLIGHT:
       // when switching from hlight to hlightchars index 255 is sent to turn off hlight
-      if (packet[4] <= PDA_LINES) {
+      if (length <= PKT_DATA) {
+        LOG(PDA_LOG,LOG_WARNING, "Ignoring truncated PDA row-highlight packet\n");
+        return false;
+      }
+      if (packet[PKT_DATA] < PDA_LINES) {
         _hlightindex = packet[4];
-        _hlightcharindexstart = -1;
-        _hlightcharindexstop = -1;
-      } else {
+        clear_hlightchars();
+      } else if (packet[PKT_DATA] == 0xFF) {
         _hlightindex = -1;
-        _hlightcharindexstart = -1;
-        _hlightcharindexstop = -1;
+        clear_hlightchars();
+      } else {
+        LOG(PDA_LOG,LOG_WARNING, "Ignoring invalid PDA row highlight line=%d\n",
+            packet[PKT_DATA]);
+        return false;
       }
       //if (getLogLevel(PDA_LOG) >= LOG_DEBUG){print_menu();}
       if (getLogLevel(PDA_LOG) >= LOG_DEBUG && force_print_menu ){
@@ -281,15 +309,33 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
       //   PDA HlightChars | HEX: 0x10|0x02|0x62|0x10|0x03|0x02|0x09|0x00|0x92|0x10|0x03|
       //   PDA HlightChars | HEX: 0x10|0x02|0x62|0x10|0x02|0x02|0x03|0x01|0x8c|0x10|0x03|
       // https://github.com/ballle98/AqualinkD/issues/46
-      // Character highlight should not update highlight index 
-      if (packet[4] <= PDA_LINES) {
-        _hlightindex = packet[4];
+      // Character highlighting is independent of the selected menu row.
+      if (length <= PKT_DATA + 3) {
+        LOG(PDA_LOG,LOG_WARNING, "Ignoring truncated PDA character-highlight packet\n");
+        clear_hlightchars();
+        return false;
+      }
+      if (packet[4] >= PDA_LINES ||
+          packet[5] >= AQ_MSGLEN ||
+          packet[6] <= packet[5] ||
+          packet[6] > AQ_MSGLEN) {
+        LOG(PDA_LOG,LOG_WARNING,
+            "Ignoring invalid PDA character highlight line=%d start=%d end=%d mode=%d\n",
+            packet[4], packet[5], packet[6], packet[7]);
+        clear_hlightchars();
+        return false;
+      } else if (packet[7] == 0) {
+        clear_hlightchars();
+      } else if (packet[7] == 1) {
+        _hlightcharlineindex = packet[4];
         _hlightcharindexstart = packet[5];
         _hlightcharindexstop = packet[6];
       } else {
-        _hlightindex = -1;
-        _hlightcharindexstart = -1;
-        _hlightcharindexstop = -1;
+        LOG(PDA_LOG,LOG_WARNING,
+            "Ignoring invalid PDA character highlight line=%d start=%d end=%d mode=%d\n",
+            packet[4], packet[5], packet[6], packet[7]);
+        clear_hlightchars();
+        return false;
       }
       //if (getLogLevel(PDA_LOG) >= LOG_DEBUG){print_menu();}
       if (getLogLevel(PDA_LOG) >= LOG_DEBUG && force_print_menu ){print_menu();}
