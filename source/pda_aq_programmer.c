@@ -43,6 +43,7 @@
 
 bool waitForPDAMessageHighlight(struct aqualinkdata *aqdata, int highlighIndex, int numMessageReceived);
 bool waitForPDAMessageType(struct aqualinkdata *aqdata, unsigned char mtype, int numMessageReceived);
+bool waitForPDANextMessageType(struct aqualinkdata *aqdata, unsigned char mtype, int numMessageReceived);
 bool waitForPDAMessageTypes(struct aqualinkdata *aqdata, unsigned char mtype1, unsigned char mtype2, int numMessageReceived);
 bool waitForPDAMessageTypesOrMenu(struct aqualinkdata *aqdata, unsigned char mtype1, unsigned char mtype2, int numMessageReceived, char *text, int line);
 bool waitForPDAMessages(struct aqualinkdata *aqdata, int numberMessages);
@@ -761,7 +762,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_STATUS,15)) {
+          if (!waitForPDANextMessageType(aqdata,CMD_STATUS,15)) {
               LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_STATUS\n",button->label);
           }
           // Check for a delayed-start status screen.
@@ -860,7 +861,7 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_STATUS,15)) {
+          if (!waitForPDANextMessageType(aqdata,CMD_STATUS,15)) {
               LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_STATUS\n",
                          aqdata->aqbuttons[device].label);
           }
