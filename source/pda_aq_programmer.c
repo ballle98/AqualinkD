@@ -1358,6 +1358,8 @@ static bool _waitForPDAMessageTypesOrMenu(struct aqualinkdata *aqdata,
                                       &aqdata->active_thread.thread_mutex, &max_wait))) {
       LOG(PDA_LOG,LOG_ERR, "waitForPDAMessageTypesOrMenu 0x%02hhx,0x%02hhx,%s,%d - %s\n",
           mtype1,mtype2,text,line,strerror(ret));
+      pthread_mutex_unlock(&aqdata->active_thread.thread_mutex);
+      return false;
     }
   }
 
