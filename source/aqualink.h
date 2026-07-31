@@ -546,8 +546,9 @@ struct aqualinkdata
   int spa_heater_index;
   int solar_heater_index;
   #endif
-  // Timing for millisecond timestamp logging
+  // Last activity controls PDA sleep and is also used for timestamp logging.
   struct timespec last_active_time;
+  pthread_mutex_t last_active_time_mutex;
   struct timespec start_active_time;
 
   // Overcome color light bug, by reconnecting allbutton panel.
