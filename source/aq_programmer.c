@@ -841,8 +841,6 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
     clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->start_active_time);
   }
 
-  LOG(PROG_LOG, LOG_INFO, "Programming: %s, %d\n", ptypeName(threadCtrl->aqdata->active_thread.ptype), threadCtrl->aqdata->active_thread.ptype);
-
   LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p is active (%s)\n",
               threadCtrl->aqdata->active_thread.ptype,
               threadCtrl->aqdata->active_thread.thread_id,
@@ -865,7 +863,7 @@ void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
   if (_aqconfig_.log_msec_ts) {
     struct timespec elapsed;
     timespec_subtract(&elapsed, &finished_at, &threadCtrl->aqdata->start_active_time);
-    LOG(PROG_LOG, LOG_NOTICE, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
+    LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
                threadCtrl->aqdata->active_thread.ptype,
                threadCtrl->aqdata->active_thread.thread_id,
                ptypeName(threadCtrl->aqdata->active_thread.ptype),
