@@ -873,8 +873,6 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
     clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->start_active_time);
   }
 
-  LOG(PROG_LOG, LOG_INFO, "Programming: %s, %d\n", ptypeName(threadCtrl->aqdata->active_thread.ptype), threadCtrl->aqdata->active_thread.ptype);
-
   LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p is active (%s)\n",
               threadCtrl->aqdata->active_thread.ptype,
               threadCtrl->aqdata->active_thread.thread_id,
