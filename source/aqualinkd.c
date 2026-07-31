@@ -70,6 +70,7 @@
   #include "timespec_subtract.h"
 #endif
 */
+
 //#define DEFAULT_CONFIG_FILE "./aqualinkd.conf"
 
 static volatile bool _keepRunning = true;
@@ -768,7 +769,7 @@ void caculate_ack_packet(int rs_fd, unsigned char *packet_buffer, emulation_type
     break;
 #ifdef AQ_PDA
     case AQUAPDA:
-      if (_aqconfig_.pda_sleep_mode && pda_shouldSleep()) {
+      if (pda_shouldSleep()) {
         LOG(PDA_LOG,LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
         return;
       } else {
@@ -877,6 +878,8 @@ void main_loop()
   _aqualink_data.simulator_active = SIM_NONE;
   _aqualink_data.boost_duration = 0;
   _aqualink_data.boost = false;
+  memset(&_aqualink_data.last_active_time, 0, sizeof(struct timespec));
+  pthread_mutex_init(&_aqualink_data.last_active_time_mutex, NULL);
   
 
   pthread_mutex_init(&_aqualink_data.active_thread.thread_mutex, NULL);
@@ -954,7 +957,7 @@ void main_loop()
 /*
 #ifdef AQ_PDA
   if (isPDA_PANEL) {
-    init_pda(&_aqualink_data);
+    init_pda(&_aqualink_data, &_aqconfig_);
     if (_aqconfig_.extended_device_id != 0x00)
     {
       LOG(AQUA_LOG,LOG_ERR, "Aqualink daemon can't use extended_device_id in PDA mode, ignoring value '0x%02hhx' from cfg\n",_aqconfig_.extended_device_id);
@@ -1146,7 +1149,7 @@ void main_loop()
 
 #ifdef AQ_PDA
   if (isPDA_PANEL) {
-    init_pda(&_aqualink_data);
+    init_pda(&_aqualink_data, &_aqconfig_);
     if (_aqconfig_.extended_device_id != 0x00)
     {
       LOG(AQUA_LOG,LOG_ERR, "Aqualink daemon can't use extended_device_id in PDA mode, ignoring value '0x%02hhx' from cfg\n",_aqconfig_.extended_device_id);
