@@ -648,6 +648,12 @@ void init_parameters (struct aqconfig * parms)
   _cfgParams[_numCfgParams].default_value = (void *)&_dcfg_true;
 
   _numCfgParams++;
+  _cfgParams[_numCfgParams].value_ptr = &_aqconfig_.pda_sleep_with_websock;
+  _cfgParams[_numCfgParams].value_type = CFG_BOOL;
+  _cfgParams[_numCfgParams].name = CFG_N_pda_sleep_with_websock;
+  _cfgParams[_numCfgParams].default_value = (void *)&_dcfg_false;
+
+  _numCfgParams++;
   _cfgParams[_numCfgParams].value_ptr = &_aqconfig_.pda_force_home_onprogram;
   _cfgParams[_numCfgParams].value_type = CFG_BOOL;
   _cfgParams[_numCfgParams].name = CFG_N_pda_force_home_onprogram;
@@ -1930,6 +1936,10 @@ void check_print_config (struct aqualinkdata *aqdata)
 
     // Don't show PDA stuff in config editor on RS panel
     if ( strcmp(_cfgParams[i].name, CFG_N_pda_sleep_mode) == 0 && !isPDA_PANEL) {
+      _cfgParams[i].config_mask |= CFG_GREYED_OUT;
+      _cfgParams[i].config_mask |= CFG_READONLY;
+    }
+    if ( strcmp(_cfgParams[i].name, CFG_N_pda_sleep_with_websock) == 0 && !isPDA_PANEL) {
       _cfgParams[i].config_mask |= CFG_GREYED_OUT;
       _cfgParams[i].config_mask |= CFG_READONLY;
     }

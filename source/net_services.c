@@ -383,6 +383,7 @@ bool _broadcast_systemd_logmessages(bool aqMgrActive, bool reOpenStaleConnection
 }
 
 
+
 #define USEC_PER_SEC	1000000L
 
 bool write_systemd_logmessages_2file(char *fname, int lines)
@@ -1804,12 +1805,6 @@ void action_websocket_request(struct mg_connection *nc, struct mg_ws_message *wm
 #ifdef AQ_TM_DEBUG
   int tid;
 #endif
-#ifdef AQ_PDA
-  // Any websocket request means UI is active, so don't let AqualinkD go to sleep if in PDA mode
-  if (isPDA_PANEL)
-    pda_reset_sleep();
-#endif
-   
   strncpy(buffer, (char *)wm->data.buf, AQ_MIN(wm->data.len, 99));
   buffer[wm->data.len] = '\0';
 
@@ -1984,6 +1979,18 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
   case MG_EV_WS_OPEN:
     _aqualink_data->open_websockets++;
     LOG(NET_LOG,LOG_DEBUG, "++ Websocket joined\n");
+#ifdef AQ_PDA
+    // Wake the PDA whenever a websocket opens so a new or reloaded UI
+    // receives refreshed equipment status.
+    if (isPDA_PANEL &&
+        (_aqualink_data->active_thread.thread_id == 0) &&
+        _aqconfig_.pda_sleep_with_websock &&
+        _aqconfig_.pda_sleep_mode) {
+      pthread_mutex_lock(&_aqualink_data->last_active_time_mutex);
+      memset(&_aqualink_data->last_active_time, 0, sizeof(struct timespec));
+      pthread_mutex_unlock(&_aqualink_data->last_active_time_mutex);
+    }
+#endif
     break;
   
   case MG_EV_WS_MSG:
@@ -2004,6 +2011,15 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
         _aqualink_data->aqManagerActive = false;
         LOG(NET_LOG,LOG_DEBUG, "Stoped Aqualink Manager\n");
       }
+#ifdef AQ_PDA
+      if (isPDA_PANEL &&
+          (_aqualink_data->active_thread.thread_id == 0) &&
+          (_aqualink_data->open_websockets == 0)) {
+        pthread_mutex_lock(&_aqualink_data->last_active_time_mutex);
+        clock_gettime(CLOCK_REALTIME, &_aqualink_data->last_active_time);
+        pthread_mutex_unlock(&_aqualink_data->last_active_time_mutex);
+      }
+#endif
     } else if (is_mqtt(nc) || is_mqttconnecting(nc) ) {
       LOG(NET_LOG,LOG_WARNING, "MQTT Connection closed\n");
       _mqtt_exit_flag = true;
@@ -2386,7 +2402,3 @@ bool start_net_services(struct aqualinkdata *aqdata)
 
   return true;
 }
-
-
-
-
