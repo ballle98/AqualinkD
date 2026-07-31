@@ -47,6 +47,8 @@ static bool waitForPDAMessageType(struct aqualinkdata *aqdata, unsigned char mty
                                   unsigned long sec, unsigned long msec);
 static bool _waitForPDAMessageType(struct aqualinkdata *aqdata, unsigned char mtype,
                                    unsigned long sec, unsigned long msec, bool forceNext);
+bool waitForPDANextMessageType(struct aqualinkdata *aqdata, unsigned char mtype,
+                               unsigned long sec, unsigned long msec);
 bool waitForPDAMessageTypes(struct aqualinkdata *aqdata, unsigned char mtype1,
                             unsigned char mtype2, unsigned long sec,
                             unsigned long msec);
@@ -255,6 +257,8 @@ bool wait_pda_selected_item(struct aqualinkdata *aqdata)
 bool waitForPDAnextMenu(struct aqualinkdata *aqdata) {
   pda_menu_type previous_menu = pda_m_type();
 
+  LOG(PDA_LOG,LOG_DEBUG, "waitForPDAnextMenu\n");
+
   // A menu command was just queued, so ignore the packet that was current
   // before the command and wait for the controller's response.
   if (!_waitForPDAMessageTypesOrMenu(aqdata,CMD_PDA_CLEAR,CMD_STATUS,0xFF,
@@ -295,6 +299,7 @@ bool waitForPDAnextMenu(struct aqualinkdata *aqdata) {
              ((pda_m_type() == PM_EQUIPTMENT_CONTROL) ||
               (pda_m_type() == PM_HOME) ||
               (pda_m_type() == PM_BUILDING_HOME))) {
+    // Flashing state for filter pump and spa mode is done with HIGHLIGHTCHARS.
     if (! waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_STATUS,2,0)) {
       LOG(PDA_LOG,LOG_ERR, "waitForPDAnextMenu - EQUIPTMENT_CONTROL no HIGHLIGHT or STATUS\n");
       return false;
@@ -767,8 +772,8 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         } else {
           send_pda_cmd(KEY_PDA_SELECT);
           waitfor_pda_queue2empty();
-          if (!waitForPDAMessageType(aqdata,CMD_PDA_HIGHLIGHT,5,0)) {
-            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",button->label);
+          if (!waitForPDAnextMenu(aqdata)) {
+            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - waitForPDAnextMenu\n",button->label);
           }
         }
       } else if ( isPLIGHT(button->special_mask) ) {
@@ -786,8 +791,13 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_MSG_LONG,0,500)) {
+          if (!waitForPDANextMessageType(aqdata,CMD_STATUS,3,0)) {
               LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s - wait for status update\n",button->label);
+          }
+          // Check for a delayed-start status screen.
+          if (pda_m_type() == PM_TURN_ON_AFTER_DELAY) {
+            send_pda_cmd(KEY_PDA_BACK);
+            waitForPDAnextMenu(aqdata);
           }
       }
       
@@ -863,8 +873,8 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         } else {
           send_pda_cmd(KEY_PDA_SELECT);
           waitfor_pda_queue2empty();
-          if (!waitForPDAMessageType(aqdata,CMD_PDA_HIGHLIGHT,5,0)) {
-            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - wait for CMD_PDA_HIGHLIGHT\n",aqdata->aqbuttons[device].label);
+          if (!waitForPDAnextMenu(aqdata)) {
+            LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s on - waitForPDAnextMenu\n",aqdata->aqbuttons[device].label);
           }
         }
       } else if ( isPLIGHT(aqdata->aqbuttons[device].special_mask) ) {
@@ -882,9 +892,14 @@ void *set_aqualink_PDA_device_on_off( void *ptr )
         }
       } else { // not turning on heater wait for line update
           // worst case spa when pool is running
-          if (!waitForPDAMessageType(aqdata,CMD_MSG_LONG,0,500)) {
+          if (!waitForPDANextMessageType(aqdata,CMD_STATUS,3,0)) {
               LOG(PDA_LOG,LOG_ERR, "PDA Device On/Off: %s - wait for status update\n",
                          aqdata->aqbuttons[device].label);
+          }
+          // Check for a delayed-start status screen.
+          if (pda_m_type() == PM_TURN_ON_AFTER_DELAY) {
+            send_pda_cmd(KEY_PDA_BACK);
+            waitForPDAnextMenu(aqdata);
           }
       }
       
