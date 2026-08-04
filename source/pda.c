@@ -67,6 +67,7 @@ bool pda_shouldSleep() {
   // Do not answer a non-probe packet after restart before the panel has
   // rediscovered this PDA address.
   if (!_pda_first_probe_recvd) {
+    pda_m_invalidate();
     return true;
   } else if (!_config_parameters->pda_sleep_mode) {
     return false;
@@ -97,6 +98,11 @@ bool pda_shouldSleep() {
     return false;
   }
 
+  // The controller retries STATUS without redrawing the PDA screen before
+  // giving up and returning to probes. Once we stop acknowledging it, the
+  // retained menu and highlight no longer describe where a later probe will
+  // restart the PDA.
+  pda_m_invalidate();
   return true;
 }
 

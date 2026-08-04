@@ -72,6 +72,7 @@ typedef enum pda_menu_type {
 //bool pda_mode();
 //void set_pda_mode(bool val);
 bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print_menu);
+void pda_m_invalidate(void);
 int pda_m_hlightindex();
 char *pda_m_hlight();
 char *pda_m_line(int index);
