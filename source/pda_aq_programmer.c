@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "aqualink.h"
 #include "utils.h"
@@ -73,6 +74,119 @@ bool _get_PDA_aqualink_pool_spa_heater_temps(struct aqualinkdata *aqdata);
 bool _get_PDA_freeze_protect_temp(struct aqualinkdata *aqdata);
 
 static pda_type _PDA_Type;
+
+#define PDA_EQUIPMENT_LABEL_LEN (AQ_MSGLEN - 4)
+#define PDA_EQUIPMENT_CACHE_MAX (TOTAL_BUTTONS + 4)
+
+static char _equipment_menu_items[PDA_EQUIPMENT_CACHE_MAX][PDA_EQUIPMENT_LABEL_LEN + 1];
+static int _equipment_menu_item_count = 0;
+static bool _equipment_menu_cache_valid = false;
+static bool _equipment_menu_warned_duplicate = false;
+static bool _equipment_menu_warned_missing_all_off = false;
+static bool _equipment_menu_warned_size_mismatch = false;
+
+static bool pda_equipment_label(char *label, const char *text)
+{
+  int start = 0;
+  int end;
+
+  strncpy(label, text, PDA_EQUIPMENT_LABEL_LEN);
+  label[PDA_EQUIPMENT_LABEL_LEN] = '\0';
+
+  while (label[start] != '\0' && isspace((unsigned char)label[start]))
+    start++;
+  if (start > 0)
+    memmove(label, label + start, strlen(label + start) + 1);
+
+  end = strlen(label);
+  while (end > 0 && isspace((unsigned char)label[end - 1]))
+    label[--end] = '\0';
+
+  return end > 0 && strncasecmp(label, "^^ MORE", 7) != 0;
+}
+
+static int pda_equipment_cache_index(const char *text)
+{
+  char label[PDA_EQUIPMENT_LABEL_LEN + 1];
+
+  if (!_equipment_menu_cache_valid || !pda_equipment_label(label, text))
+    return -1;
+
+  for (int i = 0; i < _equipment_menu_item_count; i++) {
+    if (strcasecmp(label, _equipment_menu_items[i]) == 0)
+      return i;
+  }
+
+  return -1;
+}
+
+static bool pda_equipment_supplemental_item(const char *label)
+{
+  static const char *supplemental_items[] = {
+    "SPA",
+    "POOL HEAT",
+    "SPA HEAT",
+    "SOLAR HEAT",
+    "TEMP1",
+    "TEMP2",
+    "EXTRA AUX",
+    "SPA MODE",
+    "CLEAN MODE",
+    "ALL OFF"
+  };
+
+  for (unsigned int i = 0;
+       i < sizeof(supplemental_items) / sizeof(supplemental_items[0]);
+       i++) {
+    if (strcasecmp(label, supplemental_items[i]) == 0)
+      return true;
+  }
+
+  return false;
+}
+
+static void validate_pda_equipment_cache(void)
+{
+  int all_off_count = 0;
+  int base_equipment_count = 0;
+  int expected_base_equipment_count = PANEL_SIZE() + (isDUAL_EQPT_PANEL ? 1 : 0);
+
+  for (int i = 0; i < _equipment_menu_item_count; i++) {
+    if (strcasecmp(_equipment_menu_items[i], "ALL OFF") == 0)
+      all_off_count++;
+
+    if (!pda_equipment_supplemental_item(_equipment_menu_items[i]))
+      base_equipment_count++;
+
+    for (int j = 0; j < i; j++) {
+      if (!_equipment_menu_warned_duplicate &&
+          strcasecmp(_equipment_menu_items[i], _equipment_menu_items[j]) == 0) {
+        LOG(PDA_LOG,LOG_WARNING,
+            "loopover_devices :- duplicate equipment menu item '%s'; retaining navigation cache\n",
+            _equipment_menu_items[i]);
+        _equipment_menu_warned_duplicate = true;
+        break;
+      }
+    }
+  }
+
+  if (all_off_count != 1 && !_equipment_menu_warned_missing_all_off) {
+    LOG(PDA_LOG,LOG_WARNING,
+        "loopover_devices :- expected one ALL OFF item, found %d; retaining navigation cache\n",
+        all_off_count);
+    _equipment_menu_warned_missing_all_off = true;
+  }
+
+  if (base_equipment_count != expected_base_equipment_count &&
+      !_equipment_menu_warned_size_mismatch) {
+    LOG(PDA_LOG,LOG_WARNING,
+        "loopover_devices :- cached %d base equipment items but expected %d for the configured %d-device%s panel "
+        "(%d total including modes, heaters, EXTRA AUX, and ALL OFF); retaining navigation cache\n",
+        base_equipment_count, expected_base_equipment_count, PANEL_SIZE(),
+        isDUAL_EQPT_PANEL ? " dual-equipment" : "", _equipment_menu_item_count);
+    _equipment_menu_warned_size_mismatch = true;
+  }
+}
 
 //#define USE_ALLBUTTON_QUEUE
 
@@ -309,25 +423,97 @@ bool waitForPDAnextMenu(struct aqualinkdata *aqdata) {
 }
 
 bool loopover_devices(struct aqualinkdata *aqdata) {
-  int i;
-  int index = -1;
+  char initial_items[9][PDA_EQUIPMENT_LABEL_LEN + 1];
+  char reverse_tail[PDA_EQUIPMENT_CACHE_MAX][PDA_EQUIPMENT_LABEL_LEN + 1];
+  char bottom_initial_item[PDA_EQUIPMENT_LABEL_LEN + 1];
+  char highlighted_item[PDA_EQUIPMENT_LABEL_LEN + 1];
+  int initial_count = 0;
+  int reverse_tail_count = 0;
+  int last_item_line;
+  bool paged;
+  bool completed = false;
 
   if (! goto_pda_menu(aqdata, PM_EQUIPTMENT_CONTROL)) {
     LOG(PDA_LOG,LOG_ERR, "loopover_devices :- can't goto PM_EQUIPTMENT_CONTROL menu\n");
     //cleanAndTerminateThread(threadCtrl);
     return false;
   }
-  
-  // Should look for message "ALL OFF", that's end of device list.
-  for (i=0; i < 18 && (index = pda_find_m_index("ALL OFF")) == -1 ; i++) {
-    send_pda_cmd(KEY_PDA_DOWN);
-    //waitForMessage(aqdata, NULL, 1);
-    waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_MSG_LONG,2,0);
+
+  _equipment_menu_cache_valid = false;
+  _equipment_menu_item_count = 0;
+
+  paged = strncasecmp(pda_m_line(9), "   ^^ MORE", 10) == 0;
+  last_item_line = paged ? 8 : 9;
+  for (int line = 1; line <= last_item_line; line++) {
+    if (pda_equipment_label(initial_items[initial_count], pda_m_line(line)))
+      initial_count++;
   }
-  if (index == -1) {
-     LOG(PDA_LOG,LOG_ERR, "loopover_devices :- can't find ALL OFF\n");
-     return false;
+
+  if (initial_count == 0) {
+    LOG(PDA_LOG,LOG_ERR, "loopover_devices :- equipment menu contained no devices\n");
+    return false;
   }
+
+  memcpy(bottom_initial_item, initial_items[initial_count - 1],
+         sizeof(bottom_initial_item));
+
+  if (!paged) {
+    completed = true;
+  } else {
+    LOG(PDA_LOG,LOG_DEBUG,
+        "loopover_devices :- scanning upward to initial bottom item '%s'\n",
+        bottom_initial_item);
+
+    for (int step = 0; step < PDA_EQUIPMENT_CACHE_MAX; step++) {
+      send_pda_cmd(KEY_PDA_UP);
+      if (!waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_MSG_LONG,2,0)) {
+        LOG(PDA_LOG,LOG_ERR,
+            "loopover_devices :- timeout scanning equipment after %d upward step%s\n",
+            step + 1, step == 0 ? "" : "s");
+        break;
+      }
+
+      if (!pda_equipment_label(highlighted_item, pda_m_hlight()))
+        continue;
+
+      if (strcasecmp(highlighted_item, bottom_initial_item) == 0) {
+        completed = true;
+        LOG(PDA_LOG,LOG_DEBUG,
+            "loopover_devices :- completed upward scan after %d step%s\n",
+            step + 1, step == 0 ? "" : "s");
+        break;
+      }
+
+      if (reverse_tail_count < PDA_EQUIPMENT_CACHE_MAX)
+        memcpy(reverse_tail[reverse_tail_count++], highlighted_item,
+               sizeof(highlighted_item));
+    }
+  }
+
+  if (!completed) {
+    LOG(PDA_LOG,LOG_ERR,
+        "loopover_devices :- can't complete equipment menu traversal\n");
+    return false;
+  }
+
+  for (int i = 0;
+       i < initial_count && _equipment_menu_item_count < PDA_EQUIPMENT_CACHE_MAX;
+       i++) {
+    memcpy(_equipment_menu_items[_equipment_menu_item_count++], initial_items[i],
+           sizeof(initial_items[i]));
+  }
+  for (int i = reverse_tail_count - 1;
+       i >= 0 && _equipment_menu_item_count < PDA_EQUIPMENT_CACHE_MAX;
+       i--) {
+    memcpy(_equipment_menu_items[_equipment_menu_item_count++], reverse_tail[i],
+           sizeof(reverse_tail[i]));
+  }
+
+  validate_pda_equipment_cache();
+  _equipment_menu_cache_valid = true;
+  LOG(PDA_LOG,LOG_DEBUG,
+      "loopover_devices :- cached %d equipment menu items for a configured %d-device panel\n",
+      _equipment_menu_item_count, PANEL_SIZE());
 
   return true;
 }
@@ -343,6 +529,7 @@ bool find_pda_menu_item(struct aqualinkdata *aqdata, char *menuText, int charlim
   int index = -1;
   int cnt = 0;
   bool bLookingForBoost = false;
+  char search_start_last_device[AQ_MSGLEN + 1];
 
   LOG(PDA_LOG,LOG_DEBUG, "PDA Device programmer looking for menu text '%s' (limit=%d)\n",menuText,charlimit);
 
@@ -355,11 +542,41 @@ bool find_pda_menu_item(struct aqualinkdata *aqdata, char *menuText, int charlim
 
   //int index = (charlimit == 0)?pda_find_m_index(menuText):pda_find_m_index_case(menuText, charlimit);
 
-  if (index < 0) { // No menu, is there a page down.  "PDA Line 9 =    ^^ MORE __"
+  if (index < 0) { // Not visible, is this a paged menu? "PDA Line 9 =    ^^ MORE __"
     if (strncasecmp(pda_m_line(9),"   ^^ MORE", 10) == 0) {
       int j;
+      bool searched_full_list = false;
+      bool search_up = pda_m_type() == PM_EQUIPTMENT_CONTROL;
+
+      if (search_up && _equipment_menu_cache_valid) {
+        int current_position = pda_equipment_cache_index(pda_m_hlight());
+        int target_position = pda_equipment_cache_index(menuText);
+
+        if (current_position >= 0 && target_position >= 0) {
+          int down = (target_position - current_position +
+                      _equipment_menu_item_count) % _equipment_menu_item_count;
+          int up = (current_position - target_position +
+                    _equipment_menu_item_count) % _equipment_menu_item_count;
+          search_up = up <= down;
+          LOG(PDA_LOG,LOG_DEBUG,
+              "PDA Device programmer cached equipment path to '%s': up=%d down=%d, searching %s\n",
+              menuText, up, down, search_up ? "upward" : "downward");
+        }
+      }
+
+      if (search_up) {
+        // The additional equipment is just above the first item when the
+        // paged list wraps, so search upward and use the starting screen's
+        // last device as the full-list sentinel.
+        memcpy(search_start_last_device, pda_m_line(8), AQ_MSGLEN);
+        search_start_last_device[AQ_MSGLEN] = '\0';
+        LOG(PDA_LOG,LOG_DEBUG,
+            "PDA Device programmer searching equipment pages upward; starting-page last device is '%.*s'\n",
+            AQ_MSGLEN - 4, search_start_last_device);
+      }
+
       for(j=0; j < 20; j++) {
-        send_pda_cmd(KEY_PDA_DOWN);
+        send_pda_cmd(search_up ? KEY_PDA_UP : KEY_PDA_DOWN);
         // NSF MAYBE ADD THIS NEEd TO TEST EVERYTHING ON ALL VERSIONS FIRST.
         //waitForPDAMessages(aqdata, 1); // PDA needs another message sometimes (probably not using )
         waitForPDAMessageTypes(aqdata,CMD_PDA_HIGHLIGHT,CMD_MSG_LONG,2,0);
@@ -367,11 +584,26 @@ bool find_pda_menu_item(struct aqualinkdata *aqdata, char *menuText, int charlim
         index = (charlimit == 0)?pda_find_m_index(menuText):pda_find_m_index_case(menuText, charlimit);
         if (index >= 0) {
           i=pda_m_hlightindex();
+          LOG(PDA_LOG,LOG_DEBUG,
+              "PDA Device programmer found menu item '%s' after %d %s step%s\n",
+              menuText, j + 1, search_up ? "upward" : "downward",
+              j == 0 ? "" : "s");
+          break;
+        }
+        if (search_up &&
+            strncasecmp(pda_m_hlight(), search_start_last_device,
+                        AQ_MSGLEN - 4) == 0) {
+          searched_full_list = true;
+          LOG(PDA_LOG,LOG_DEBUG,
+              "PDA Device programmer completed upward equipment search after %d step%s\n",
+              j + 1, j == 0 ? "" : "s");
           break;
         }
       }
       if (index < 0) {
-        LOG(PDA_LOG,LOG_ERR, "PDA Device programmer couldn't find menu item on any page '%s'\n",menuText);
+        LOG(PDA_LOG,LOG_ERR,
+            "PDA Device programmer couldn't find menu item on any page '%s'%s\n",
+            menuText, searched_full_list ? "" : " before search limit");
         return false;
       }
     } else {

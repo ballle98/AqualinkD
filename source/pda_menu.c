@@ -38,6 +38,13 @@ static void clear_hlightchars()
   _hlightcharindexstop = -1;
 }
 
+void pda_m_invalidate(void)
+{
+  _hlightindex = -1;
+  clear_hlightchars();
+  memset(_menu, 0, sizeof(_menu));
+}
+
 void print_menu()
 {
   int i;
@@ -245,9 +252,7 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
 
   switch (packet[PKT_CMD]) {
     case CMD_PDA_CLEAR:
-      _hlightindex = -1;
-      clear_hlightchars();
-      memset(_menu, 0, PDA_LINES * (AQ_MSGLEN+1));
+      pda_m_invalidate();
       printed_page = false;
     break;
     case CMD_STATUS:
