@@ -46,8 +46,65 @@ static unsigned char _last_packet_type;
 static bool _initWithRS = false;
 static bool _first_status_after_clear = false;
 static bool _pda_first_probe_recvd = false;
+static bool _pda_sleep_state_known = false;
+static bool _pda_is_sleeping = false;
+
+typedef enum {
+  PDA_SLEEP_BLOCK_NONE,
+  PDA_SLEEP_BLOCK_THREAD,
+  PDA_SLEEP_BLOCK_WEBSOCKET
+} pda_sleep_blocker;
+
+static pda_sleep_blocker _pda_sleep_blocker = PDA_SLEEP_BLOCK_NONE;
+static program_type _pda_sleep_blocking_thread = AQP_NULL;
 
 #define PDA_SLEEP_FOR 30
+
+static bool update_pda_sleep_state(bool should_sleep,
+                                   pda_sleep_blocker blocker)
+{
+  if (!_pda_sleep_state_known || _pda_is_sleeping != should_sleep) {
+    if (should_sleep) {
+      LOG(PDA_LOG,LOG_DEBUG, "PDA Aqualink daemon in sleep mode\n");
+    } else if (_pda_sleep_state_known && _pda_is_sleeping) {
+      LOG(PDA_LOG,LOG_DEBUG, "PDA Aqualink daemon waking from sleep mode\n");
+    }
+    _pda_sleep_state_known = true;
+    _pda_is_sleeping = should_sleep;
+  }
+
+  if (should_sleep) {
+    // The controller retries STATUS without redrawing the PDA screen before
+    // giving up and returning to probes.  Once we stop acknowledging it, the
+    // retained menu and highlight no longer describe where a later probe will
+    // restart the PDA.  Invalidate on every ignored packet so a late redraw
+    // cannot repopulate stale navigation state while the daemon is asleep.
+    pda_m_invalidate();
+    _pda_sleep_blocker = PDA_SLEEP_BLOCK_NONE;
+    _pda_sleep_blocking_thread = AQP_NULL;
+    return true;
+  }
+
+  if (blocker == PDA_SLEEP_BLOCK_THREAD) {
+    program_type active_type = _aqualink_data->active_thread.ptype;
+    if (_pda_sleep_blocker != blocker ||
+        _pda_sleep_blocking_thread != active_type) {
+      LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as thread %s(%d),%p is active\n",
+          ptypeName(active_type), active_type,
+          _aqualink_data->active_thread.thread_id);
+    }
+    _pda_sleep_blocking_thread = active_type;
+  } else if (blocker == PDA_SLEEP_BLOCK_WEBSOCKET &&
+             _pda_sleep_blocker != blocker) {
+    LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
+    _pda_sleep_blocking_thread = AQP_NULL;
+  } else if (blocker == PDA_SLEEP_BLOCK_NONE) {
+    _pda_sleep_blocking_thread = AQP_NULL;
+  }
+  _pda_sleep_blocker = blocker;
+
+  return false;
+}
 
 
 
@@ -67,26 +124,20 @@ bool pda_shouldSleep() {
   // Do not answer a non-probe packet after restart before the panel has
   // rediscovered this PDA address.
   if (!_pda_first_probe_recvd) {
-    pda_m_invalidate();
-    return true;
+    return update_pda_sleep_state(true, PDA_SLEEP_BLOCK_NONE);
   } else if (!_config_parameters->pda_sleep_mode) {
-    return false;
+    return update_pda_sleep_state(false, PDA_SLEEP_BLOCK_NONE);
   }
   
   if (_aqualink_data->active_thread.thread_id != 0) {
-    LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as thread %s(%d),%p is active\n",
-               ptypeName(_aqualink_data->active_thread.ptype),
-               _aqualink_data->active_thread.ptype,
-               _aqualink_data->active_thread.thread_id);
-    return false;
+    return update_pda_sleep_state(false, PDA_SLEEP_BLOCK_THREAD);
   }
 
   // By default an open web UI keeps the PDA awake.  The optional websocket
   // sleep mode allows normal sleep after the first connection wakes it.
   if ((!_config_parameters->pda_sleep_with_websock) &&
       (_aqualink_data->open_websockets > 0)) {
-    LOG(PDA_LOG,LOG_DEBUG, "PDA can't sleep as websocket is active\n");
-    return false;
+    return update_pda_sleep_state(false, PDA_SLEEP_BLOCK_WEBSOCKET);
   }
 
   clock_gettime(CLOCK_REALTIME, &now);
@@ -95,15 +146,10 @@ bool pda_shouldSleep() {
   pthread_mutex_unlock(&_aqualink_data->last_active_time_mutex);
   timespec_subtract(&elapsed, &now, &last_active);
   if (elapsed.tv_sec > PDA_SLEEP_FOR) {
-    return false;
+    return update_pda_sleep_state(false, PDA_SLEEP_BLOCK_NONE);
   }
 
-  // The controller retries STATUS without redrawing the PDA screen before
-  // giving up and returning to probes. Once we stop acknowledging it, the
-  // retained menu and highlight no longer describe where a later probe will
-  // restart the PDA.
-  pda_m_invalidate();
-  return true;
+  return update_pda_sleep_state(true, PDA_SLEEP_BLOCK_NONE);
 }
 
 unsigned char get_last_pda_packet_type()
@@ -671,6 +717,23 @@ void log_pump_information() {
   }
 }
 
+static bool pda_status_line_matches(const char *line, const char *expected)
+{
+  size_t start = 0;
+  size_t end = AQ_MSGLEN;
+  size_t expected_length = strlen(expected);
+
+  while (start < end && isspace((unsigned char)line[start])) {
+    start++;
+  }
+  while (end > start && isspace((unsigned char)line[end - 1])) {
+    end--;
+  }
+
+  return end - start == expected_length &&
+         strncasecmp(line + start, expected, expected_length) == 0;
+}
+
 
 void process_pda_packet_msg_long_equiptment_status(const char *msg_line, int lineindex, bool reset)
 {
@@ -753,17 +816,17 @@ void process_pda_packet_msg_long_equiptment_status(const char *msg_line, int lin
     //if (_aqualink_data->ar_swg_status == SWG_STATUS_OFF) {_aqualink_data->ar_swg_status = SWG_STATUS_ON;}
     LOG(PDA_LOG,LOG_DEBUG, "SALT = %d\n", _aqualink_data->swg_ppm);
   }  
-  else if (rsm_strncmp(msg_line, "POOL HEAT ENA",AQ_MSGLEN) == 0)
+  else if (pda_status_line_matches(msg_line, "POOL HEAT ENA"))
   {
       SET_IF_CHANGED(_aqualink_data->aqbuttons[_aqualink_data->pool_heater_index].led->state, ENABLE, _aqualink_data->is_dirty);
       LOG(PDA_LOG,LOG_DEBUG, "Pool Hearter is enabled\n");
-      //equiptment_update_cycle(_aqualink_data->pool_heater_index);
+      equiptment_update_cycle(_aqualink_data->pool_heater_index);
   }
-  else if (rsm_strncmp(msg_line, "SPA HEAT ENA",AQ_MSGLEN) == 0)
+  else if (pda_status_line_matches(msg_line, "SPA HEAT ENA"))
   {
       SET_IF_CHANGED(_aqualink_data->aqbuttons[_aqualink_data->spa_heater_index].led->state, ENABLE, _aqualink_data->is_dirty);
       LOG(PDA_LOG,LOG_DEBUG, "Spa Hearter is enabled\n");
-      //equiptment_update_cycle(_aqualink_data->spa_heater_index);
+      equiptment_update_cycle(_aqualink_data->spa_heater_index);
   }
   else
   {
