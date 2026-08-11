@@ -661,6 +661,7 @@ int build_aqualink_aqmanager_JSON(struct aqualinkdata *aqdata, char* buffer, int
   }
 
   length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s\"",AQUALINKD_VERSION);
+  length += sprintf(buffer+length, ",\"git_revision\":\"%s\"",GIT_HASH);
 
   length += sprintf(buffer+length, ",\"panel_type_full\":\"%s\"",getPanelString());
   length += sprintf(buffer+length, ",\"panel_type\":\"%s\"",getShortPanelString());
