@@ -661,7 +661,9 @@ int build_aqualink_aqmanager_JSON(struct aqualinkdata *aqdata, char* buffer, int
   }
 
   length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s\"",AQUALINKD_VERSION);
-  length += sprintf(buffer+length, ",\"git_revision\":\"%s\"",GIT_HASH);
+  if (GIT_HASH[0] != '\0') {
+    length += sprintf(buffer+length, ",\"git_revision\":\"%s\"",GIT_HASH);
+  }
 
   length += sprintf(buffer+length, ",\"panel_type_full\":\"%s\"",getPanelString());
   length += sprintf(buffer+length, ",\"panel_type\":\"%s\"",getShortPanelString());
@@ -733,7 +735,11 @@ int build_aqualink_status_JSON(struct aqualinkdata *aqdata, char* buffer, int si
   //length += sprintf(buffer+length, ",\"message\":\"%s\"",aqdata->message );
   //length += sprintf(buffer+length, ",\"version\":\"%s\"",aqdata->version );//8157 REV MMM",
   length += sprintf(buffer+length, ",\"version\":\"%s %s\"",aqdata->panel_cpu, aqdata->panel_rev );//8157 REV MMM",
-  length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s (rev %s)\"", AQUALINKD_VERSION, GIT_HASH); //1.0b,
+  if (GIT_HASH[0] != '\0') {
+    length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s (rev %s)\"", AQUALINKD_VERSION, GIT_HASH); //1.0b,
+  } else {
+    length += sprintf(buffer+length, ",\"aqualinkd_version\":\"%s\"", AQUALINKD_VERSION); //1.0b,
+  }
   length += sprintf(buffer+length, ",\"date\":\"%s\"",aqdata->date );//"09/01/16 THU",
   length += sprintf(buffer+length, ",\"time\":\"%s\"",aqdata->time );//"1:16 PM",
   //length += sprintf(buffer+length, ",\"air_temp\":\"%d\"",aqdata->air_temp );//"96",

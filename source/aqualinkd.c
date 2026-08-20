@@ -452,7 +452,11 @@ void action_delayed_request()
 
 void printHelp()
 {
-  printf("%s %s (rev %s)\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  if (GIT_HASH[0] != '\0') {
+    printf("%s %s (rev %s)\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  } else {
+    printf("%s %s\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+  }
   printf("\t-h         (this message)\n");
   printf("\t-d         (do not deamonize)\n");
   printf("\t-c <file>  (Configuration file)\n");
@@ -604,7 +608,11 @@ int startup(char *self, char *cfgFile)
 
   // Setup a log level just to get this message out, will be re-set once config is read
   setSystemLogLevel(LOG_NOTICE);
-  LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s (rev %s) !\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  if (GIT_HASH[0] != '\0') {
+    LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s (rev %s) !\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  } else {
+    LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s !\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+  }
 
   sprintf(_aqualink_data.self, basename(self));
   clearDebugLogMask();
