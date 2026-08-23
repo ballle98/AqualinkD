@@ -190,6 +190,25 @@ const char *HASSIO_DIMMER_DISCOVER = "{"
     "\"brightness_scale\": 100"
 "}";
 
+const char *HASSIO_DIMMER_RGB_DISCOVER = "{"
+    "\"device\": {" HASS_DEVICE "},"
+    "\"availability\": {" HASS_AVAILABILITY "},"
+    "\"type\": \"light\","
+    "\"unique_id\": \"aqualinkd_%s\","
+    "\"name\": \"%s\","
+    "\"state_topic\": \"%s/%s\","
+    "\"command_topic\": \"%s/%s/set\","
+    "\"json_attributes_topic\": \"%s/%s/delay\","
+    "\"json_attributes_template\": \"{{ {'delay': value|int} | tojson }}\","
+    "\"payload_on\": \"1\","
+    "\"payload_off\": \"0\","
+    "\"brightness_command_topic\": \"%s/%s%s/set\","
+    "\"brightness_state_topic\": \"%s/%s%s\","
+    "\"brightness_scale\": 100,"
+    "\"rgb_command_topic\": \"%s/%s%s/set\","
+    "\"rgb_state_topic\": \"%s/%s%s\""
+"}";
+
 const char *HASSIO_SELECTOR_DISCOVER = "{"
     "\"device\": {" HASS_DEVICE "},"
     "\"availability\": {" HASS_AVAILABILITY "},"
@@ -483,18 +502,35 @@ void publish_mqtt_discovery(struct aqualinkdata *aqdata, struct mg_connection *n
         sprintf(topic, "%s/select/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, aqdata->aqbuttons[i].name);
         send_mqtt(nc, topic, msg);
         
-         // Duplicate normal switch as we want a duplicate
-        sprintf(msg, HASSIO_SWITCH_DISCOVER,
-             connections,
-             _aqconfig_.mqtt_aq_topic,
-             aqdata->aqbuttons[i].name, 
-             aqdata->aqbuttons[i].label, 
-             _aqconfig_.mqtt_aq_topic,aqdata->aqbuttons[i].name,
-             _aqconfig_.mqtt_aq_topic,aqdata->aqbuttons[i].name,
-             _aqconfig_.mqtt_aq_topic,aqdata->aqbuttons[i].name,
-             _aqconfig_.mqtt_aq_topic,aqdata->aqbuttons[i].name,
-             "mdi:lightbulb");
-        sprintf(topic, "%s/switch/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, aqdata->aqbuttons[i].name);
+        if (((clight_detail *)aqdata->aqbuttons[i].special_mask_ptr)->lightType == LC_JANDYINFINATE) {
+          // Jandy Infinite supports brightness + RGB — emit a dimmer+RGB light entity
+          sprintf(msg, HASSIO_DIMMER_RGB_DISCOVER,
+               connections,
+               _aqconfig_.mqtt_aq_topic,
+               aqdata->aqbuttons[i].name,
+               aqdata->aqbuttons[i].label,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name, LIGHT_DIMMER_VALUE_TOPIC,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name, LIGHT_DIMMER_VALUE_TOPIC,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name, LIGHT_RGB_TOPIC,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name, LIGHT_RGB_TOPIC);
+          sprintf(topic, "%s/light/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, aqdata->aqbuttons[i].name);
+        } else {
+          // All other color lights: duplicate as plain on/off switch
+          sprintf(msg, HASSIO_SWITCH_DISCOVER,
+               connections,
+               _aqconfig_.mqtt_aq_topic,
+               aqdata->aqbuttons[i].name,
+               aqdata->aqbuttons[i].label,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               _aqconfig_.mqtt_aq_topic, aqdata->aqbuttons[i].name,
+               "mdi:lightbulb");
+          sprintf(topic, "%s/switch/aqualinkd/aqualinkd_%s/config", _aqconfig_.mqtt_discovery_topic, aqdata->aqbuttons[i].name);
+        }
         send_mqtt(nc, topic, msg);
        
       } else {

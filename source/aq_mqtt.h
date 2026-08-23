@@ -60,6 +60,7 @@
 
 #define LIGHT_PROGRAM_TOPIC "/program"
 #define LIGHT_DIMMER_VALUE_TOPIC "/brightness"
+#define LIGHT_RGB_TOPIC "/rgb"
 
 #define SENSOR_TOPIC "Sensor"
 #define FULL_SENSOR_TOPIC SENSOR_TOPIC "/"

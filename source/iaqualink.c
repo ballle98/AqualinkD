@@ -120,6 +120,15 @@ unsigned char iAqalnkDevID(aqkey *button) {
     return button->rssd_code;
   }
 
+  // LC_JANDYINFINATE virtual buttons have no RS485 rssd_code; use lightID from config instead
+  if ( ((button->special_mask & (VIRTUAL_BUTTON | PROGRAM_LIGHT)) == (VIRTUAL_BUTTON | PROGRAM_LIGHT)) &&
+       button->special_mask_ptr != NULL ) {
+    clight_detail *light = (clight_detail *)button->special_mask_ptr;
+    if (light->lightType == LC_JANDYINFINATE && light->lightID != NUL) {
+      return light->lightID;
+    }
+  }
+
   switch (button->rssd_code) {
     case RS_SA_PUMP:
       return IAQ_PUMP;
@@ -266,8 +275,72 @@ HEX: 0x10|0x02|0x00|0x24|0x73|0x01|0x05|0x00|0x48|0x00|0x00|0x00|0x00|0x00|0x00|
 */
 
 
+void set_iaqualink_light_colormode(aqkey *button, int value)
+{
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = (unsigned char)value;
+  _fullcmd[7] = 0x64; // 100% brightness when setting a color mode
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
+}
+
+void set_iaqualink_light_brightness(aqkey *button, int value)
+{
+  _fullcmd[4] = iAqalnkDevID(button);
+
+  if (_fullcmd[4] == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  _fullcmd[6] = 0xFF;
+  _fullcmd[7] = (unsigned char)value;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
+}
+
+void set_iaqualink_light_rgb(aqkey *button, int r, int g, int b)
+{
+  unsigned char devID = iAqalnkDevID(button);
+
+  if (devID == 0xFF) {
+    LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for light button %s\n", button->label);
+    return;
+  }
+
+  // RGB command uses devID+2 (e.g. lightID=0x61 → RGB devID=0x63)
+  _fullcmd[4] = devID + 2;
+  _fullcmd[6] = (unsigned char)r;
+  _fullcmd[7] = (unsigned char)g;
+  _fullcmd[8] = (unsigned char)b;
+
+  push_iaqualink_cmd(_cmd_readyCommand, 2);
+  push_iaqualink_cmd(_fullcmd, 19);
+
+  _fullcmd[4] = 0x00;
+  _fullcmd[6] = 0x00;
+  _fullcmd[7] = 0x00;
+  _fullcmd[8] = 0x00;
+}
+
 void set_iaqualink_aux_state(aqkey *button, bool isON) {
-  
+
   _fullcmd[4] = iAqalnkDevID(button);
 
   if (_fullcmd[4] != 0xFF) {
@@ -277,10 +350,9 @@ void set_iaqualink_aux_state(aqkey *button, bool isON) {
      LOG(IAQL_LOG, LOG_ERR, "Couldn't find iaqualink keycode for button %s\n",button->label);
   }
 
-  // reset 
+  // reset
   _fullcmd[4] = 0x00;
 }
-
 
 // AQ_SET_IAQTOUCH_CHILLER_TEMP
 // AQ_SET_IAQLINK_CHILLER_TEMP //
@@ -575,7 +647,6 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
       for (int bi=aqdata->virtual_button_start ; bi < aqdata->total_buttons ; bi++) {
         //LOG(IAQL_LOG, LOG_INFO, "Check %s against %s\n",(char *)&packet[start + 2], aqdata->aqbuttons[bi].label);
         if (rsm_strcmp((char *)&packet[start + 2], aqdata->aqbuttons[bi].label) == 0) {
-          //LOG(IAQL_LOG, LOG_INFO, "Status for %s is %s\n",aqdata->aqbuttons[bi].label,(status == 0x00 ? "Off" : "On "));
           // == means doesn;t match, RS 1=on 0=off / LED enum 1=off 0=on
           if (aqdata->aqbuttons[bi].led->state == status) {
             LOG(IAQL_LOG, LOG_INFO, "Updated Status for %s is %s\n",aqdata->aqbuttons[bi].label,(status == 0x00 ? "Off" : "On "));
@@ -636,6 +707,31 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
             decodeTypeBits(packet[status + 1], packet[status + 2], packet[status + 3])
           );
       }
+      // LC_JANDYINFINATE: packet[status+0] = color mode index (1=Alpine White, 2=Sky Blue, …, 0=off)
+      //                   packet[status+3] = brightness (0-100)
+      for (int li = 0; li < aqdata->num_lights; li++) {
+        if (aqdata->lights[li].lightType == LC_JANDYINFINATE &&
+            aqdata->lights[li].button != NULL &&
+            rsm_strcmp((char *)&packet[labelstart], aqdata->lights[li].button->label) == 0) {
+          int new_mode       = packet[status];
+          int new_brightness = packet[status + 3];
+          aqledstate new_led = (new_mode == 0x00 ? OFF : ON);
+          SET_IF_CHANGED(aqdata->lights[li].button->led->state, new_led, aqdata->is_dirty);
+          if (aqdata->lights[li].currentValue != new_mode) {
+            LOG(IAQL_LOG, LOG_INFO, "LC_JANDYINFINATE '%.*s' color mode updated %d -> %d\n",
+                labellen, &packet[labelstart], aqdata->lights[li].currentValue, new_mode);
+            aqdata->lights[li].currentValue = new_mode;
+            aqdata->is_dirty = true;
+          }
+          if (aqdata->lights[li].brightness != new_brightness) {
+            LOG(IAQL_LOG, LOG_INFO, "LC_JANDYINFINATE '%.*s' brightness updated %d -> %d\n",
+                labellen, &packet[labelstart], aqdata->lights[li].brightness, new_brightness);
+            aqdata->lights[li].brightness = new_brightness;
+            aqdata->is_dirty = true;
+          }
+        }
+      }
+
       if (isPDA_PANEL) {
         for (int bi=2 ; bi < aqdata->total_buttons ; bi++) {
           if (rsm_strcmp((char *)&packet[labelstart], aqdata->aqbuttons[bi].label) == 0) {
@@ -652,6 +748,9 @@ bool process_iAqualinkStatusPacket(unsigned char *packet, int length, struct aqu
 
       i = labelstart + labellen;
     }
+  }
+  else {
+    LOG(IAQL_LOG, LOG_DEBUG, "Unhandled iAqualink status packet cmd=0x%02hhx len=%d\n", packet[PKT_CMD], length);
   }
 
   return true;
