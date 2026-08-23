@@ -43,10 +43,8 @@
 #include "devices_jandy.h"
 #include "iaqualink.h"
 
-#ifdef AQ_DEBUG
-  #include <time.h>
-  #include "timespec_subtract.h"
-#endif
+#include <time.h>
+#include "timespec_subtract.h"
 
 void _aq_programmer(program_type r_type, char *args, struct aqualinkdata *aqdata, bool allowOveride);
 
@@ -870,9 +868,9 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
   threadCtrl->aqdata->active_thread.thread_id = &threadCtrl->thread_id;
   threadCtrl->aqdata->active_thread.ptype = type;
 
-  #ifdef AQ_DEBUG
+  if (_aqconfig_.log_msec_ts) {
     clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->start_active_time);
-  #endif
+  }
 
   LOG(PROG_LOG, LOG_INFO, "Programming: %s, %d\n", ptypeName(threadCtrl->aqdata->active_thread.ptype), threadCtrl->aqdata->active_thread.ptype);
 
@@ -888,19 +886,18 @@ void waitForSingleThreadOrTerminate(struct programmingThreadCtrl *threadCtrl, pr
 void cleanAndTerminateThread(struct programmingThreadCtrl *threadCtrl)
 {
   //waitfor_queue2empty();
-  #ifndef AQ_DEBUG
-  LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished\n",threadCtrl->aqdata->active_thread.ptype, threadCtrl->thread_id,ptypeName(threadCtrl->aqdata->active_thread.ptype));
-  #else
-  struct timespec elapsed;
-  clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->last_active_time);
-  timespec_subtract(&elapsed, &threadCtrl->aqdata->last_active_time, &threadCtrl->aqdata->start_active_time);
-  LOG(PROG_LOG, LOG_NOTICE, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
-             threadCtrl->aqdata->active_thread.ptype,
-             threadCtrl->aqdata->active_thread.thread_id,
-             ptypeName(threadCtrl->aqdata->active_thread.ptype),
-             elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
-  #endif
-
+  if (_aqconfig_.log_msec_ts) {
+    struct timespec elapsed;
+    clock_gettime(CLOCK_REALTIME, &threadCtrl->aqdata->last_active_time);
+    timespec_subtract(&elapsed, &threadCtrl->aqdata->last_active_time, &threadCtrl->aqdata->start_active_time);
+    LOG(PROG_LOG, LOG_NOTICE, "Thread %d,%p (%s) finished in %d.%03ld sec\n",
+               threadCtrl->aqdata->active_thread.ptype,
+               threadCtrl->aqdata->active_thread.thread_id,
+               ptypeName(threadCtrl->aqdata->active_thread.ptype),
+               elapsed.tv_sec, elapsed.tv_nsec / 1000000L);
+  } else {
+    LOG(PROG_LOG, LOG_DEBUG, "Thread %d,%p (%s) finished\n",threadCtrl->aqdata->active_thread.ptype, threadCtrl->thread_id,ptypeName(threadCtrl->aqdata->active_thread.ptype));
+  }
   // Quick delay to allow for last message to be sent.
   delay(500);
   threadCtrl->aqdata->active_thread.thread_id = 0;

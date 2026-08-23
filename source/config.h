@@ -67,6 +67,7 @@ struct aqconfig
   char *serial_port;
   unsigned int log_level;
   unsigned int mg_log_level;
+  bool log_msec_ts;
   char *web_directory;
   char *web_config;
   unsigned char device_id;
@@ -255,6 +256,7 @@ int _numCfgParams;
 #define CFG_N_serial_port                       "serial_port"
 #define CFG_N_log_level                         "log_level"
 #define CFG_N_MG_log_level                      "mg_log_level"
+#define CFG_N_log_msec_ts                       "log_msec_ts"
 #define CFG_V_log_level                         "[\"DEBUG_SERIAL\", \"DEBUG\", \"INFO\", \"NOTICE\", \"WARNING\", \"ERROR\"]"
 #define CFG_N_listen_address                    "listen_address" 
 #define CFG_N_cert_dir                          "https_cert_dir"

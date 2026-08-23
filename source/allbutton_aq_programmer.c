@@ -95,7 +95,9 @@ unsigned char pop_allb_cmd(struct aqualinkdata *aqdata)
     if ( _allb_pgm_command != NUL && aqdata->last_packet_type == CMD_STATUS) {
       cmd = _allb_pgm_command;
       _allb_pgm_command = NUL;
-      LOG(ALLB_LOG, LOG_DEBUG_SERIAL, "RS SEND cmd '0x%02hhx' (programming)\n", cmd);
+      if (cmd) {
+        LOG(ALLB_LOG, LOG_DEBUG_SERIAL, "RS SEND cmd %s '0x%02hhx' (programming)\n", cmd_to_string(cmd), cmd);
+      }
     } else if (_allb_pgm_command != NUL) {
       LOG(ALLB_LOG, LOG_DEBUG_SERIAL, "RS Waiting to send cmd '0x%02hhx' (programming)\n", _allb_pgm_command);
     } else {
@@ -1349,7 +1351,7 @@ void send_cmd(unsigned char cmd)
   _allb_pgm_command = cmd;
   //delay(200);
 
-  LOG(ALLB_LOG, LOG_INFO, "Queue send '0x%02hhx' to controller (programming)\n", _allb_pgm_command);
+  LOG(ALLB_LOG, LOG_INFO, "Queue send %s '0x%02hhx' to controller (programming)\n", cmd_to_string(_allb_pgm_command), _allb_pgm_command);
 }
 
 void force_queue_delete()

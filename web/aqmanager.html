@@ -1817,7 +1817,11 @@
       logging2file will tell us if it's currently on or off
     */
     try {
-      document.getElementById("aqualinkdversion").innerHTML = data['aqualinkd_version'];
+      let displayedVersion = data['aqualinkd_version'];
+      if(data['git_revision']) {
+        displayedVersion += " " + data['git_revision'];
+      }
+      document.getElementById("aqualinkdversion").textContent = displayedVersion;
     } catch (e) {}
     if(data['deamonized'] == 'off') {
       //console.log("deamonized=" + data['deamonized'] + " Need to rename Restart to Reload");

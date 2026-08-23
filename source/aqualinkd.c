@@ -88,6 +88,7 @@ int _cmdln_loglevel = -1;
 bool _cmdln_debugRS485 = false;
 bool _cmdln_lograwRS485 = false;
 bool _cmdln_nostartupcheck = false;
+bool _cmdln_log_msec_ts = false;
 
 #ifdef AQ_TM_DEBUG
   //struct timespec _rs_packet_readitme;
@@ -450,12 +451,17 @@ void action_delayed_request()
 
 void printHelp()
 {
-  printf("%s %s\n",AQUALINKD_NAME,AQUALINKD_VERSION);
+  if (GIT_HASH[0] != '\0') {
+    printf("%s %s (rev %s)\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  } else {
+    printf("%s %s\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+  }
   printf("\t-h         (this message)\n");
   printf("\t-d         (do not deamonize)\n");
   printf("\t-c <file>  (Configuration file)\n");
   printf("\t-v         (Debug logging)\n");
   printf("\t-vv        (Serial Debug logging)\n");
+  printf("\t-m         (Millisecond timestamps and thread timing)\n");
   printf("\t-rsd       (RS485 debug)\n");
   printf("\t-rsrd      (RS485 raw debug)\n");
 }
@@ -533,6 +539,10 @@ int main(int argc, char *argv[])
     {
       _cmdln_loglevel = LOG_DEBUG;
     }
+    else if (strcmp(argv[i], "-m") == 0)
+    {
+      _cmdln_log_msec_ts = true;
+    }
     else if (strcmp(argv[i], "-rsd") == 0)
     {
       _cmdln_debugRS485 = true;
@@ -597,7 +607,11 @@ int startup(char *self, char *cfgFile)
 
   // Setup a log level just to get this message out, will be re-set once config is read
   setSystemLogLevel(LOG_NOTICE);
-  LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s !\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+  if (GIT_HASH[0] != '\0') {
+    LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s (rev %s) !\n", AQUALINKD_NAME, AQUALINKD_VERSION, GIT_HASH);
+  } else {
+    LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s !\n", AQUALINKD_NAME, AQUALINKD_VERSION);
+  }
 
   sprintf(_aqualink_data.self, basename(self));
   clearDebugLogMask();
@@ -611,6 +625,11 @@ int startup(char *self, char *cfgFile)
 
   if (_cmdln_lograwRS485)
     _aqconfig_.log_raw_bytes = true;
+
+  if (_cmdln_log_msec_ts)
+    _aqconfig_.log_msec_ts = true;
+
+  setMsecTimestampLog(_aqconfig_.log_msec_ts);
       
 
 #ifdef AQ_MANAGER
@@ -1423,5 +1442,3 @@ void debugtestePump()
   processJandyPacket(fromPumpRPM, 11, &_aqualink_data);
 }
 */
-
-

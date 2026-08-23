@@ -29,10 +29,7 @@
 //#include <time.h>
 #include <ctype.h>
 #include <fcntl.h>
-
-#ifdef AD_DEBUG
 #include <sys/time.h>
-#endif
 
 #ifdef AQ_MANAGER
 #include <systemd/sd-journal.h>
@@ -64,6 +61,7 @@ static bool _cfg_log2file;
 static int _cfg_log_level;
 #endif
 static int _log_level = LOG_WARNING;
+static bool _log_msec_ts = false;
 
 static char *_loq_display_message = NULL;
 logmask_t _logforcemask = 0;
@@ -102,6 +100,11 @@ void setLoggingPrms(int level , bool deamonized, char* log_file, char *error_mes
 void setSystemLogLevel( int level)
 {
   _log_level = level;
+}
+
+void setMsecTimestampLog(bool enabled)
+{
+  _log_msec_ts = enabled;
 }
 int getSystemLogLevel()
 {
@@ -733,19 +736,21 @@ void _LOG(logmask_t from, int msg_level, char *message, int message_buffer_size)
 #endif //AQ_MANAGER
 
   if (_daemonise == FALSE) {
-    if (msg_level == LOG_ERR) {
-      fprintf(stderr, "%s", message);
-    } else {
-#ifndef AD_DEBUG
-      printf("%s", message);
-#else
+    if (_log_msec_ts) {
       struct timespec tspec;
       struct tm localtm;
       clock_gettime(CLOCK_REALTIME, &tspec);
       char timeStr[TIMESTAMP_LENGTH];
       strftime(timeStr, sizeof(timeStr), "%H:%M:%S", localtime_r(&tspec.tv_sec, &localtm));
-      printf("%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
-#endif
+      if (msg_level == LOG_ERR) {
+        fprintf(stderr, "%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
+      } else {
+        printf("%s.%03ld %s", timeStr, tspec.tv_nsec / 1000000L, message);
+      }
+    } else if (msg_level == LOG_ERR) {
+      fprintf(stderr, "%s", message);
+    } else {
+      printf("%s", message);
     }
   }
 }

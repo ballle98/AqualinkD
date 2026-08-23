@@ -194,7 +194,7 @@ const char* get_jandy_packet_type(const unsigned char* packet , int length)
       return "PDA Unknown";
     break;
     case CMD_PDA_0x1B:
-      return "PDA Init (*guess*)";
+      return "PDA Init (guess)";
     break;
     case CMD_PDA_HIGHLIGHT:
       return "PDA Hlight";
@@ -1305,33 +1305,25 @@ int get_packet(int fd, unsigned char* packet)
   //clock_gettime(CLOCK_REALTIME, &_last_serial_read_time);
   //}
   //LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial read %d bytes\n",index);
-  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL)
+  if (_aqconfig_.log_protocol_packets || getLogLevel(RSSD_LOG) >= LOG_DEBUG_SERIAL) {
     logPacketRead(packet, index);
+  } else {
+    LOG(RSSD_LOG,LOG_DEBUG_SERIAL, "Serial read %d bytes\n",index);
+  }
   // Return the packet length.
   return index;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+const char* cmd_to_string(const unsigned char cmd)
+{
+  switch (cmd) {
+    case KEY_PDA_UP:      return "UP";
+    case KEY_PDA_DOWN:    return "DOWN";
+    case KEY_PDA_BACK:    return "BACK";
+    case KEY_PDA_SELECT:  return "SELECT";
+    default:              return "UNKNOWN";
+  }
+}
 
 
 
