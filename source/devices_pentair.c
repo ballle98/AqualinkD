@@ -80,6 +80,40 @@ bool processPentairPacket(unsigned char *packet, int packet_length, struct aqual
             SET_IF_CHANGED(aqdata->pumps[i].pStatus, PS_OFF, aqdata->is_dirty);
           }
         }
+#ifdef CATCH_PENT_ANOMALY
+        // --- ANOMALY TRIPWIRE FOR DRY-FIRE / LOST PRIME ---
+        
+        bool anomaly_detected = false;
+        uint16_t current_rpm = aqdata->pumps[i].rpm;
+        uint16_t current_watts = aqdata->pumps[i].watts;
+        uint8_t  current_gpm = aqdata->pumps[i].gpm;
+        uint16_t current_status = aqdata->pumps[i].status;
+
+        // Hardware Status Flags (Bit 3 or Bit 4)
+        if ((current_status & 8) || (current_status & 16)) {
+            anomaly_detected = true;
+        }
+
+        // Physical Heuristic (Spinning in air)
+        // Adjust the 150w threshold based on your specific pump's BaseLineK profile.
+        // A typical VSP at 1500+ RPM pulling fluid will draw significantly more than 150W.
+        if (current_rpm > 1500 && current_gpm == 0 && current_watts < 150) {
+            anomaly_detected = true;
+        }
+
+        if (anomaly_detected) {
+            char dump_buff[1024];
+            beautifyPacket(dump_buff, 1024, packet, packet_length, true);
+            
+            // Elevate this to LOG_WARNING or LOG_ERR so it reliably hits the systemd journal
+            // even when general debugging is turned off.
+            LOG(DPEN_LOG, LOG_WARNING, 
+                "ANOMALY DETECTED: Possible Dry Fire. RPM: %d | WATTS: %d | GPM: %d | Status: %d\n", 
+                current_rpm, current_watts, current_gpm, current_status);
+            LOG(DPEN_LOG, LOG_WARNING, "ANOMALY PACKET DUMP: %s\n", dump_buff);
+        }
+        // --- END ANOMALY TRIPWIRE ---
+#endif //CATCH_PENT_ANOMALY
 
         changedAnything = true;
         break;

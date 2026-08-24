@@ -513,7 +513,7 @@ int build_device_JSON(struct aqualinkdata *aqdata, char* buffer, int size, bool 
                                    ((homekit_f)?CHRM_PH_F_TOPIC:CHEM_PH_TOPIC),
                                    "Water Chemistry pH",
                                    "on",
-                                   ((homekit)?2:1),
+                                   ((homekit)?2:2),
                                    ((homekit_f)?(degFtoC(aqdata->ph)):aqdata->ph)); 
   }
   if ( aqdata->orp != TEMP_UNKNOWN ) {
@@ -594,6 +594,25 @@ int build_device_JSON(struct aqualinkdata *aqdata, char* buffer, int size, bool 
       }
     }
   }
+
+  // See if we have efficency metric for any pump and add a sensor for that.
+  // BAD Hack, make sure to compare to similar code in build_aqualink_status_JSON()
+  // Rethink when move to cJSON
+  for (i=0; i < aqdata->num_pumps; i++) {
+    int sensor_id = MAX_SENSORS+1; // simply use the last ID
+    if (aqdata->pumps[i].efficiency.isConfigured) {
+      
+      float efficiency = calculate_flow_efficiency_pct(&aqdata->pumps[i]);
+      length += sprintf(buffer+length, "{\"type\": \"value\", \"id\": \"%s%s%d\", \"name\": \"%s %s\", \"state\": \"on\", \"value\": \"%.0f\", \"uom\": \"%%\" },",
+                        FULL_SENSOR_TOPIC,SENSOR_NAME,sensor_id,
+                        aqdata->pumps[i].pumpName, "Efficiency",
+                        efficiency);
+      sensor_id++;
+    }
+  }
+
+
+
 /*
   length += sprintf(buffer+length,  "], \"aux_device_detail\": [");
   for (i=0; i < MAX_PUMPS; i++) {
@@ -795,7 +814,7 @@ int build_aqualink_status_JSON(struct aqualinkdata *aqdata, char* buffer, int si
     length += sprintf(buffer+length, ",\"swg_boost_msg\":\"%s\"",aqdata->boost_msg );
   
   if ( aqdata->ph != TEMP_UNKNOWN )
-    length += sprintf(buffer+length, ",\"chem_ph\":\"%.1f\"",aqdata->ph );
+    length += sprintf(buffer+length, ",\"chem_ph\":\"%.2f\"",aqdata->ph );
     
   if ( aqdata->orp != TEMP_UNKNOWN )
     length += sprintf(buffer+length, ",\"chem_orp\":\"%d\"",aqdata->orp );
@@ -920,6 +939,19 @@ printf("Pump Type %d\n",aqdata->pumps[i].pumpType);
       }
     }
   }
+  // See if we have efficency metric for any pump and add a sensor for that.
+  // BAD Hack, make sure to compare to similar code in build_device_JSON()
+  // Rethink when move to cJSON
+  for (i=0; i < aqdata->num_pumps; i++) {
+    int sensor_id = MAX_SENSORS+1; // simply use the last ID
+    if (aqdata->pumps[i].efficiency.isConfigured) {
+      float efficiency = calculate_flow_efficiency_pct(&aqdata->pumps[i]);
+      length += sprintf(buffer+length, "\"%s%d\": \"%.0f\",", SENSOR_NAME, sensor_id, efficiency );
+      sensor_id++;
+    }
+  }
+
+
   if (buffer[length-1] == ',')
     length--;
   length += sprintf(buffer+length, "}");

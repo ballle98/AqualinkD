@@ -158,9 +158,21 @@ Panel = RS-2/6 Dual will not have spa on auto config. (fine after saving config 
 Need to fix SWG when it's set to 0, thinks it's off and can't change, if it states 0 need to be enable, if blank turn off.
 Need to look at sub panel (combined panels)
 when serial port is wrong, can't edit config.
+
+
+
+FIX THIS.
+aqualinkd-cm test unit
+Notice:AqualinkD: Starting Aqualink Daemon v3.1.1 (Dev2) !
+Error: AqualinkD: Config error, VSP Pumps limited to 4, ignoring : button_01_pumpEfficiency=57.35
+Info:  Error:   AqualinkD: Config error, VSP Pumps limited to 4, ignoring : button_01_pumpEfficiency=57.35
+
+READ air/pool/spa temp from RS_serial protocol.  https://github.com/aqualinkd/AqualinkD/issues/528#issuecomment-4661954296
 -->
-## Release 3.1.1 (Dev 2)
+## Release 3.1.1 (Dev 3)
 * Changes for VSP and Virtual VSP for panel rev Yg
+* Added Pump Efficiency, can monitor when filter / skimmers need cleaning on VSP pumps.[Click for more details](https://github.com/aqualinkd/VSP_Efficiency.md)
+* Added support for Jandy Infinite Watercolor (RS485)
 
 ## Release 3.1.0 (April 2026)
 * Added device power to watts in MQTT discovery for power monitoring

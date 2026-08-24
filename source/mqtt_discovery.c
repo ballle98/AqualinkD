@@ -759,6 +759,18 @@ void publish_mqtt_discovery(struct aqualinkdata *aqdata, struct mg_connection *n
               
     sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s%d_%s/config", _aqconfig_.mqtt_discovery_topic, "Pump",pn,"Watts");
     send_mqtt(nc, topic, msg);
+
+    if (aqdata->pumps[i].efficiency.isConfigured) {
+      sprintf(msg, HASSIO_PUMP_SENSOR_DISCOVER,
+              connections,
+              _aqconfig_.mqtt_aq_topic,
+              "Pump",pn,"Efficiency",
+              aqdata->pumps[i].button->label,(rsm_strncasestr(aqdata->pumps[i].button->label,"pump",strlen(aqdata->pumps[i].button->label))!=NULL)?"":"Pump","Efficiency",
+              _aqconfig_.mqtt_aq_topic,aqdata->pumps[i].button->name ,PUMP_EFFICIENCY_TOPIC,
+              "%");
+      sprintf(topic, "%s/sensor/aqualinkd/aqualinkd_%s%d_%s/config", _aqconfig_.mqtt_discovery_topic, "Pump",pn,"Efficiency");
+      send_mqtt(nc, topic, msg);
+    }
   }
 
   // Chem feeder (ph/orp)

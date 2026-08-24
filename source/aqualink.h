@@ -254,6 +254,17 @@ typedef enum panel_vsp_status
 #define UPDATERELEASE      ( 1 << 1 )
 #define CHECKONLY          ( 1 << 3 )
 */
+
+typedef struct {
+    bool isConfigured;      
+    int baselineRpmLow;
+    float baselineKLow;
+    int baselineRpmMed;
+    float baselineKMed;    
+    int baselineRpmHigh;
+    float baselineKHigh;
+} pump_efficiency_profile;
+
 typedef struct pumpd
 {
   int rpm;
@@ -276,6 +287,7 @@ typedef struct pumpd
   int status;
   panel_vsp_status pStatus;  // FUTURE VSP STATUS,
   int pressureCurve;
+  pump_efficiency_profile efficiency;
 } pump_detail;
 
 // color light modes (Aqualink program, Jandy, Jandy LED, SAm/SAL, Color Logic, Intellibrite)

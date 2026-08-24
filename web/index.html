@@ -990,6 +990,8 @@
         //alert("NOT Standalone");
       }
 
+      
+
       // For one external script (and backwards compatibility),
       if (_config?.external_script) {
         loadScriptIfAvailable(_config.external_script);
@@ -1001,7 +1003,6 @@
           loadScriptIfAvailable(scriptUrl);
         });
       }
-
             
       // Test for iframe
       if (window.self !== window.top) {
@@ -1571,11 +1572,11 @@
           value = '--';
         } else {
           let uom;
-          if ((uom = document.getElementById(id).getAttribute('UOM')) != null) {
+          if ((uom = document.getElementById(id)?.getAttribute('UOM')) != null) {
             //console.log("UOM for "+id+" is "+uom);
             ext = uom;
             //ext = '<span class="uom_text">'+uom+'</span>';
-          } else if ((type = document.getElementById(id).getAttribute('type')) != null) { 
+          } else if ((type = document.getElementById(id)?.getAttribute('type')) != null) { 
             if (type == 'temperature' || type == 'setpoint_thermo' || type == 'setpoint_freeze' || type == 'setpoint_chiller') {
               ext = '&deg;';
             } else if (type == 'setpoint_swg') {
@@ -1609,7 +1610,8 @@
         }
       } catch (e) {
           // Devices that are hidden are not found
-          console.log('ERROR id=' + id + ' Line '+new Error().lineNumber+' | element = '+document.getElementById(id)+"\n"+e);
+          //console.error(e);
+          //console.log('ERROR id=' + id + ' Line '+new Error().lineNumber+' | element = '+document.getElementById(id)+"\n"+e);
       }
       //document.getElementById(id + '_tile_icon_value').textContent = value;
       var tile;
@@ -1635,19 +1637,19 @@
       let status = 'on';
       let text = '';
 
-      if (value <= thresholds.outofrange.min || value >= thresholds.outofrange.max) {
+      if (value <= thresholds?.outofrange?.min || value >= thresholds?.outofrange?.max) {
         status = 'rangecritical';
-        if ( value <= thresholds.outofrange.min && thresholds.outofrange.mintext != null)
+        if ( value <= thresholds?.outofrange?.min && thresholds?.outofrange?.mintext != null)
           text = thresholds.outofrange.mintext;
-        else if ( value >= thresholds.outofrange.max && thresholds.outofrange.maxtext != null)
+        else if ( value >= thresholds?.outofrange?.max && thresholds?.outofrange?.maxtext != null)
           text = thresholds.outofrange.maxtext;
         else
           text = 'Out of range';
-      } else if (value <= thresholds.attention.min || value >= thresholds.attention.max) {
+      } else if (value <= thresholds?.attention?.min || value >= thresholds?.attention?.max) {
         status = 'rangewarning';
-        if ( value <= thresholds.attention.min && thresholds.attention.mintext != null)
+        if ( value <= thresholds?.attention?.min && thresholds?.attention?.mintext != null)
           text = thresholds.attention.mintext;
-        else if ( value >= thresholds.attention.max && thresholds.attention.maxtext != null)
+        else if ( value >= thresholds?.attention?.max && thresholds?.attention?.maxtext != null)
           text = thresholds.attention.maxtext;
         else if (_tile_line_char_limit < 15)
           text = 'Attention';
@@ -1715,11 +1717,17 @@
 
     //function getTileS
 
-    function setThermostatTile(id, value, sp_value) {
+    function setThermostatTile(id, value, sp_value, sp_value2=null) {
       setTileValue(id, value);
       var tile;
       if ((tile = document.getElementById(id)) != null) {
         tile.setAttribute('setpoint', sp_value);
+      }
+
+      if ( tile.getAttribute('type') === 'setpoint_chiller' & sp_value2 !== null) {
+      //if (id === "Chiller" & sp_value2 !== null) {
+        tile.setAttribute('heat-setpoint', sp_value2);
+        tile.setAttribute('cool-setpoint', sp_value);
       }
     }
 
@@ -1843,7 +1851,9 @@
           }
           else if (type == 'setpoint_chiller') {
             try{
-            text = capitalizeFirstLetter(tile.getAttribute("mode"))+' to ' + tile.getAttribute('setpoint');
+              let mode = tile?.getAttribute("mode");
+              text = capitalizeFirstLetter(mode) + ' to ' + tile.getAttribute(mode+'-setpoint');
+              //text = capitalizeFirstLetter(tile.getAttribute("mode"))+' to ' + tile.getAttribute('setpoint');
             } catch (except){}
             //text = 'Cool to ' + tile.getAttribute('setpoint');
           }
@@ -2153,6 +2163,7 @@ if (totalSeconds < 0) totalSeconds = 0;
     }
 
     function showTileOptions(show, id, contex) {
+      //console.log("showTileOptions:"+show+" id :"+id);
       var active_option;
       if (show == true) {
         var wrapH = document.getElementById('wrapper').clientHeight + 'px';
@@ -2495,6 +2506,28 @@ if (totalSeconds < 0) totalSeconds = 0;
           get_schedules();
         } else if (type == 'simulator') {
           startSimulator();
+        } else if (type == 'setpoint_chiller') {
+          let table = document.getElementById("thermostat_table");
+          let mode = tile?.getAttribute("mode");
+          slider.value = tile.getAttribute(mode+'-setpoint');
+          oswitch = document.getElementById("option_switch");
+          if (mode == "heat") {
+            pre = "Heat to ";
+          } else {
+            pre = "Cool to ";
+          }
+          oswitch.checked = tile_state;
+          var oswitch_output = document.getElementById("option_switch_text_value");
+          oswitch_output.innerHTML = ((oswitch.checked) ? "On" : "Off");
+          slider_output.innerHTML = pre + slider.value + ext;
+          slider.oninput = function() {
+            slider_output.innerHTML = pre + this.value + ext;
+            //sp_value = this.value
+          }
+          oswitch.onclick = function() {
+            oswitch_output.innerHTML = ((oswitch.checked) ? "On" : "Off");
+            //setTileOn(id, ((oswitch.checked)?"on":"off"), null);
+          }
         } else {
           slider.value = sp_value;
           oswitch = document.getElementById("option_switch");
@@ -2524,7 +2557,6 @@ if (totalSeconds < 0) totalSeconds = 0;
           tm_ext = ' runtime (min)';
 
           tm_slider.value = tm_slider.min;
-
           tm_slider_output.innerHTML = tm_slider.value + tm_ext;
           tm_slider.oninput = function() {
             tm_slider_output.innerHTML = this.value + tm_ext;
@@ -2561,6 +2593,7 @@ if (totalSeconds < 0) totalSeconds = 0;
         };
         document.getElementById("body_wrap").addEventListener("click", clickHandler);
         close_button.onclick = function() {
+          //console.log("close_button clicked");
           document.getElementById("body_wrap").removeEventListener("click", clickHandler);
           var state = oswitch?.checked;
           if (type == 'switch_program') {
@@ -2648,6 +2681,20 @@ if (totalSeconds < 0) totalSeconds = 0;
             if (sp_value != slider.value)
               setThermostatSetpoint(id, slider.value);
           } else if (type == 'simulator') {
+            // Nothing to save, but could add options here in future.
+          } else if (type == 'setpoint_chiller') {
+            let mode = tile?.getAttribute("mode");
+            let cur_value = tile.getAttribute(mode+'-setpoint');
+            var value = slider.value;
+            if (state == (tile.getAttribute('status') == 'off'))
+              setTileState(id, state);
+            if (cur_value != slider.value) {
+              if (mode == "heat") {
+                setThermostatSetpoint("Pool_Heater", slider.value);
+              } else {
+                setThermostatSetpoint(id, slider.value);
+              }
+            }
           } else {
             var value = slider.value;
             if (state == (tile.getAttribute('status') == 'off'))
@@ -2773,7 +2820,7 @@ if (totalSeconds < 0) totalSeconds = 0;
     }
 
     function startSimulator() {
-      console.log("Starting ifram sim init");
+      //console.log("Starting ifram sim init");
       document.getElementById('onetouch_iframe').display = 'block';
     }
 
@@ -3172,18 +3219,26 @@ if (totalSeconds < 0) totalSeconds = 0;
       setThermostatTile("Spa_Heater", data.spa_temp, data.spa_htr_set_pnt);
       setThermostatTile("Freeze_Protect", data.air_temp, data.frz_protect_set_pnt);
 
-      if ( data.chiller_set_pnt !== undefined ) {
-        // NSF Should use spa temp if in spa mode
-        if (data.leds.Spa !== undefined && data.leds.Spa == "on")
-          setThermostatTile("Chiller", data.spa_temp, data.chiller_set_pnt);
-        else
-          setThermostatTile("Chiller", data.pool_temp, data.chiller_set_pnt);
-      }
+      
       if ( data.chiller_mode !== undefined ) {
         try{
           let elmt = document.getElementById("Chiller");
           elmt.setAttribute("mode", data.chiller_mode);
         } catch (exception){}
+      }
+
+      if ( data.chiller_set_pnt !== undefined ) {
+        let mode = document.getElementById("Chiller")?.getAttribute("mode");
+        // NSF Should use spa temp if in spa mode
+        if (data.leds.Spa !== undefined && data.leds.Spa == "on")
+          setThermostatTile("Chiller", data.spa_temp, data.chiller_set_pnt);
+        else {
+          //if (mode == "heat") {
+          //  setThermostatTile("Chiller", data.pool_temp, data.pool_htr_set_pnt);
+          //} else {
+            setThermostatTile("Chiller", data.pool_temp, data.chiller_set_pnt, data.pool_htr_set_pnt);
+          //}
+        }
       }
       
       setTileValue("Temperature/Air", data.air_temp);
@@ -3639,13 +3694,15 @@ if (totalSeconds < 0) totalSeconds = 0;
     function loadScriptIfAvailable(url) {
         const script = document.createElement('script');
         script.src = url;
-
+        //alert(`Loading script from ${url}`);
         script.onload = function () {
           //console.log(`Script from ${url} loaded and executed.`);
+          //alert(`onload script from ${url}`);
         };
 
         script.onerror = function () {
           //console.error(`Script from ${url} could not be loaded.`);
+          //alert(`error Loading script from ${url}`);
         };
 
         document.head.appendChild(script);
@@ -3767,7 +3824,7 @@ function cs_synchronizeTableWidths() {
 
     <div id='thermostat_options' class='options hide'>
       <div id='thermostat_options_pane' class='options_pane' onclick='event.stopPropagation();'>
-        <table border='0' cellpadding='10px'>
+        <table border='0' cellpadding='10px' id="thermostat_table">
           <tr class='options_title'>
             <th colspan='2'><span id="option_title"></span>
             </th>
@@ -3790,6 +3847,18 @@ function cs_synchronizeTableWidths() {
             <td colspan='2'>
               <div class="slidecontainer">
                 <input type="range" class="option_slider" id='option_slider_range'>
+              </div>
+            </td>
+          </tr>
+
+          <tr id="slider2_text" style="display: none">
+            <td colspan='2' align='center'><span class="option_text" id="option_slider2_text_value"></span>
+            </td>
+          </tr>
+          <tr id="slider2_range" style="display: none">
+            <td colspan='2'>
+              <div class="slidecontainer">
+                <input type="range" class="option_slider" id='option_slider2_range'>
               </div>
             </td>
           </tr>

@@ -2085,3 +2085,56 @@ void setButtonSpecialMask(aqkey *button, uint16_t mask2set)
 
   button->special_mask |= mask2set;
 }
+
+// How far below 100% to trigger an automatic console warning
+#define EFFICIENCY_WARNING_THRESHOLD 90.0f 
+
+float calculate_flow_efficiency_pct(pump_detail *pump) {
+    // 1. Exit if not configured
+    if (pump->efficiency.isConfigured == false || 
+        pump->efficiency.baselineKLow <= 0.0f || 
+        pump->efficiency.baselineKMed <= 0.0f || 
+        pump->efficiency.baselineKHigh <= 0.0f) {
+        return AQ_UNKNOWN; 
+    }
+
+    // 2. Guard against off states or invalid data
+    if (pump->pStatus != PS_OK || pump->rpm < 1000 || pump->watts <= 0) {
+        return 0.0f;
+    }
+
+    // Assigning shorthand names to match mathematical notation
+    float x = (float)pump->rpm;
+    float x0 = (float)pump->efficiency.baselineRpmLow;
+    float x1 = (float)pump->efficiency.baselineRpmMed;
+    float x2 = (float)pump->efficiency.baselineRpmHigh;
+
+    float y0 = pump->efficiency.baselineKLow;
+    float y1 = pump->efficiency.baselineKMed;
+    float y2 = pump->efficiency.baselineKHigh;
+
+    // 3. Calculate Lagrange terms to fit the quadratic curve
+    float t0 = ((x - x1) * (x - x2)) / ((x0 - x1) * (x0 - x2));
+    float t1 = ((x - x0) * (x - x2)) / ((x1 - x0) * (x1 - x2));
+    float t2 = ((x - x0) * (x - x1)) / ((x2 - x0) * (x2 - x1));
+
+    // Determine the dynamic target K for the current RPM
+    float target_k = (y0 * t0) + (y1 * t1) + (y2 * t2);
+
+    // 4. Calculate Live Scaled K
+    float rpm_cubed = x * x * x;
+    float current_scaled_k = ((float)pump->watts / rpm_cubed) * 1000000000.0f;
+    
+    // 5. Final percentage calculation
+    float health_pct = (current_scaled_k / target_k) * 100.0f;
+
+    if (pump->prclType == PENTAIR) {
+      LOG(DPEN_LOG, LOG_DEBUG, "Pump %s efficiency, RPM=%d, Watts=%d, TargetK=%.2f, LiveK=%.2f, Eff=%.0f\n",
+            pump->button->name, pump->rpm, pump->watts, target_k, current_scaled_k, health_pct);
+    } else {
+      LOG(DJAN_LOG, LOG_DEBUG, "Pump %s efficiency, RPM=%d, Watts=%d, TargetK=%.2f, LiveK=%.2f, Eff=%.0f\n",
+            pump->button->name, pump->rpm, pump->watts, target_k, current_scaled_k, health_pct);
+    }
+
+    return health_pct;
+}

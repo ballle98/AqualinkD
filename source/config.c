@@ -39,7 +39,7 @@
 #include <net/if.h>
 #include <regex.h>
 #include <limits.h>
-
+#include <aq_mqtt.h>
 
 #define CONFIG_C
 #include "rs_devices.h"
@@ -1298,7 +1298,7 @@ if (strlen(cleanwhitespace(value)) <= 0) {
       if ( num + 1 > aqdata->num_sensors ) {
         aqdata->num_sensors = num + 1;
       }
-      sprintf(aqdata->sensors[num].ID, "Aux_S%d", num+1);
+      sprintf(aqdata->sensors[num].ID, "%s%d", SENSOR_NAME, num+1);
       if (strncasecmp(param + 9, "_label", 6) == 0) {
         //aqdata->sensors[num].label = ncleanalloc(value, AQ_MSGLEN);
         aqdata->sensors[num].label = cleanalloc(value);
@@ -1396,8 +1396,34 @@ bool populatePumpData(struct aqualinkdata *aqdata, char *pumpcfg ,aqkey *button,
     pump->maxSpeed = strtoul(value, NULL, 10);
   } else if (strncasecmp(pumpcfg, "pumpMinSpeed", 12) == 0) {
     pump->minSpeed = strtoul(value, NULL, 10);
+
+  } else if (strncasecmp(pumpcfg, "pumpBaselineRpmLow", 18) == 0) {
+    pump->efficiency.baselineRpmLow = strtoul(value, NULL, 10);
+  } else if (strncasecmp(pumpcfg, "pumpBaselineKLow", 16) == 0) {
+    pump->efficiency.baselineKLow = strtof(value, NULL);
+  } else if (strncasecmp(pumpcfg, "pumpBaselineRpmMed", 18) == 0) { // Added Medium RPM
+    pump->efficiency.baselineRpmMed = strtoul(value, NULL, 10);
+  } else if (strncasecmp(pumpcfg, "pumpBaselineKMed", 16) == 0) {  // Added Medium K
+    pump->efficiency.baselineKMed = strtof(value, NULL);
+  } else if (strncasecmp(pumpcfg, "pumpBaselineRpmHigh", 19) == 0) {
+    pump->efficiency.baselineRpmHigh = strtoul(value, NULL, 10);
+  } else if (strncasecmp(pumpcfg, "pumpBaselineKHigh", 17) == 0) {
+    pump->efficiency.baselineKHigh = strtof(value, NULL);
   } else {
     return false;
+  }
+
+  // Ensure all 3 distinct data points are fully populated before enabling the feature
+  if (pump->efficiency.baselineRpmLow > 0 && 
+      pump->efficiency.baselineKLow > 0.0f &&
+      pump->efficiency.baselineRpmMed > 0 && 
+      pump->efficiency.baselineKMed > 0.0f &&
+      pump->efficiency.baselineRpmHigh > 0 &&
+      pump->efficiency.baselineKHigh > 0.0f) {
+     
+     pump->efficiency.isConfigured = true;
+  } else {
+    pump->efficiency.isConfigured = false;
   }
 
   return true;
@@ -1480,6 +1506,11 @@ pump_detail *getPumpFromButtonID(struct aqualinkdata *aqdata, aqkey *button)
     aqdata->pumps[aqdata->num_pumps].pumpIndex = 0;
     aqdata->pumps[aqdata->num_pumps].maxSpeed = TEMP_UNKNOWN;
     aqdata->pumps[aqdata->num_pumps].minSpeed = TEMP_UNKNOWN;
+    aqdata->pumps[aqdata->num_pumps].efficiency.isConfigured = false;
+    aqdata->pumps[aqdata->num_pumps].efficiency.baselineKHigh = TEMP_UNKNOWN;
+    aqdata->pumps[aqdata->num_pumps].efficiency.baselineKLow = TEMP_UNKNOWN;
+    aqdata->pumps[aqdata->num_pumps].efficiency.baselineRpmHigh = TEMP_UNKNOWN;
+    aqdata->pumps[aqdata->num_pumps].efficiency.baselineRpmLow = TEMP_UNKNOWN;
     //pumpType
     aqdata->pumps[aqdata->num_pumps].pumpName[0] = '\0';
     aqdata->num_pumps++;
@@ -1698,7 +1729,7 @@ void check_print_config (struct aqualinkdata *aqdata)
           aqdata->sensors[j].regex = aqdata->sensors[j+1].regex;
           aqdata->sensors[j].uom = aqdata->sensors[j+1].uom;
           //aqdata->sensors[j].ID = aqdata->sensors[j+1].ID;
-          sprintf(aqdata->sensors[j].ID, "Aux_S%d", j+1);
+          sprintf(aqdata->sensors[j].ID, "%s%d", SENSOR_NAME, j+1);
           //printf("Sensor %d = %s, %s\n",j,aqdata->sensors[j].ID,aqdata->sensors[j].label);
         }
         i--; // Need re-test i incase we have multiple blank sensors

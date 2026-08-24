@@ -279,6 +279,15 @@
         "mintext": "Low",
         "maxtext": "High"
       }
+    },
+    "Sensor/Aux_S5": {
+      "outofrange": {
+        "min": 90,
+        "mintext": "Clean Filter(s)"
+      },
+      "attention": {
+        "min": 94
+      }
     }
   },
   "swg_status": {

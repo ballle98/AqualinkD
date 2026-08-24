@@ -41,7 +41,14 @@ DBGFLAGS = -g -O0 -Wall -D AQ_DEBUG -D AQ_TM_DEBUG
 #MGFLAGS = -D MG_TLS=2 #(2=MG_TLS_OPENSSL. 3=MG_TLS_BUILTIN) --or--  -DMG_TLS=MG_TLS_BUILTIN
 MGFLAGS = -D MG_TLS=3 -D MG_ENABLE_SSI=0
 
-GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
+#GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
+
+ifneq ($(filter buildrelease quickbuild debugbuild dockerbuildnrun,$(MAKECMDGOALS)),)
+    GIT_HASH :=
+else
+    GIT_HASH := $(shell git describe --dirty --always --abbrev=7 2>/dev/null)
+endif
+
 $(info GIT_HASH: $(GIT_HASH) )
 
 # Detect OS and set some specifics

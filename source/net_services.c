@@ -873,8 +873,10 @@ void mqtt_broadcast_aqualinkstate(struct mg_connection *nc)
     }
   }
 
+  
   // Loop over Pumps
   for (i=0; i < _aqualink_data->num_pumps; i++) {
+    int rpm_watts_changed=0;
     //_aqualink_data->pumps[i].rpm = TEMP_UNKNOWN;
     //_aqualink_data->pumps[i].gph = TEMP_UNKNOWN;
     //_aqualink_data->pumps[i].watts = TEMP_UNKNOWN;
@@ -886,6 +888,7 @@ void mqtt_broadcast_aqualinkstate(struct mg_connection *nc)
       if (_aqualink_data->pumps[i].pumpType == EPUMP || _aqualink_data->pumps[i].pumpType == VSPUMP) {
         send_mqtt_aux_msg(nc, _aqualink_data->pumps[i].button->name, PUMP_SPEED_TOPIC, getPumpSpeedAsPercent(&_aqualink_data->pumps[i]));
       }
+      rpm_watts_changed++;
     }
     if (_aqualink_data->pumps[i].gpm != TEMP_UNKNOWN && _aqualink_data->pumps[i].gpm != _last_mqtt_aqualinkdata.pumps[i].gpm) {
       _last_mqtt_aqualinkdata.pumps[i].gpm = _aqualink_data->pumps[i].gpm;
@@ -899,6 +902,7 @@ void mqtt_broadcast_aqualinkstate(struct mg_connection *nc)
       _last_mqtt_aqualinkdata.pumps[i].watts = _aqualink_data->pumps[i].watts;
       //send_mqtt_aux_msg(nc, PUMP_TOPIC, i+1, PUMP_WATTS_TOPIC, _aqualink_data->pumps[i].watts);
       send_mqtt_aux_msg(nc, _aqualink_data->pumps[i].button->name, PUMP_WATTS_TOPIC, _aqualink_data->pumps[i].watts);
+      rpm_watts_changed++;
     }
     if (_aqualink_data->pumps[i].mode != TEMP_UNKNOWN && _aqualink_data->pumps[i].mode != _last_mqtt_aqualinkdata.pumps[i].mode) {
       _last_mqtt_aqualinkdata.pumps[i].mode = _aqualink_data->pumps[i].mode;
@@ -907,6 +911,12 @@ void mqtt_broadcast_aqualinkstate(struct mg_connection *nc)
     if (_aqualink_data->pumps[i].pressureCurve != TEMP_UNKNOWN && _aqualink_data->pumps[i].pressureCurve != _last_mqtt_aqualinkdata.pumps[i].pressureCurve) {
       _last_mqtt_aqualinkdata.pumps[i].pressureCurve = _aqualink_data->pumps[i].pressureCurve;
       send_mqtt_aux_msg(nc, _aqualink_data->pumps[i].button->name, PUMP_PPC_TOPIC, _aqualink_data->pumps[i].pressureCurve);
+    }
+    if (_aqualink_data->pumps[i].efficiency.isConfigured && rpm_watts_changed > 0) {
+      float efficency = calculate_flow_efficiency_pct(&_aqualink_data->pumps[i]);
+      if (efficency >= 0 ) {
+        send_mqtt_aux_msg(nc, _aqualink_data->pumps[i].button->name, PUMP_EFFICIENCY_TOPIC, efficency);
+      }
     }
     pumpStatus = getPumpStatus(i, _aqualink_data);
     if (pumpStatus != TEMP_UNKNOWN && 

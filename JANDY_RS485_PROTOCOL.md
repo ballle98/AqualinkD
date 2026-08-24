@@ -562,8 +562,15 @@ From status packets (CMD_JXI_STATUS):
 // From protocol notes in devices_jandy.c
 "LXi status | HEX: 0x10|0x02|0x00|0x0d|0x00|0x00|0x00|0x1f|0x10|0x03|"
 "LXi status | HEX: 0x10|0x02|0x00|0x0a|0x00|0x00|0x00|0x1f|0x10|0x03|"
-                                                              ↑ ERROR if 0x10
+                                             ↑ ERROR if not 0x00
 ```
+| Error  | Status            |
+|--------|-------------------|
+| 0x10   | FAULT HIGH LIMIT  |
+| 0x02   | FAULT H20 SENSOR  |
+| 0x08   | FAULT AUX MONITOR |
+      
+
 
 ### LX Heater
 

@@ -57,6 +57,7 @@
 #define PUMP_STATUS_TOPIC "/Status"
 #define PUMP_PPC_TOPIC "/PPC"
 #define PUMP_SPEED_TOPIC "/Speed"
+#define PUMP_EFFICIENCY_TOPIC "/Efficiency"
 
 #define LIGHT_PROGRAM_TOPIC "/program"
 #define LIGHT_DIMMER_VALUE_TOPIC "/brightness"
@@ -64,6 +65,7 @@
 
 #define SENSOR_TOPIC "Sensor"
 #define FULL_SENSOR_TOPIC SENSOR_TOPIC "/"
+#define SENSOR_NAME "Aux_S"
 
 /*
 #define AIR_TEMPERATURE   "Air"

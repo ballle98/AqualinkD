@@ -66,7 +66,7 @@ function setupTiles() {
 
   // If aqualinkd has not added tiles, wait.
   if ( document.getElementById("Filter_Pump") === null) {
-    setTimeout(setupTiles, 100);
+    setTimeout(setupTiles, 200);
     return;
   }
 

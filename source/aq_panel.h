@@ -97,6 +97,7 @@ bool setVirtualButtonAltLabel(aqkey *button, char *label);
 clight_detail *getProgramableLight(struct aqualinkdata *aqdata, int button);
 pump_detail *getPumpDetail(struct aqualinkdata *aqdata, int button);
 void setButtonSpecialMask(aqkey *button, uint16_t masktoset);
+float calculate_flow_efficiency_pct(pump_detail *pump);
 
 //void panneltest();
 
