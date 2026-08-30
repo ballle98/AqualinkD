@@ -17,6 +17,7 @@
 
 
 #define _GNU_SOURCE 1 // for strcasestr & strptime
+#include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -77,6 +78,7 @@ static pda_type _PDA_Type;
 
 #define PDA_EQUIPMENT_LABEL_LEN (AQ_MSGLEN - 4)
 #define PDA_EQUIPMENT_CACHE_MAX (TOTAL_BUTTONS + 4)
+#define PDA_MESSAGE_TIMEOUT_PER_EXPECTED_MESSAGE_SEC 1
 
 static char _equipment_menu_items[PDA_EQUIPMENT_CACHE_MAX][PDA_EQUIPMENT_LABEL_LEN + 1];
 static int _equipment_menu_item_count = 0;
@@ -84,6 +86,15 @@ static bool _equipment_menu_cache_valid = false;
 static bool _equipment_menu_warned_duplicate = false;
 static bool _equipment_menu_warned_missing_all_off = false;
 static bool _equipment_menu_warned_size_mismatch = false;
+
+// PDA packets normally arrive several times per second. Preserve legacy waits
+// for an exact packet count, but cap the entire operation at one second per
+// expected packet so a stalled serial path cannot block a programmer forever.
+static void set_pda_message_deadline(struct timespec *deadline, int expected_messages)
+{
+  clock_gettime(CLOCK_REALTIME, deadline);
+  deadline->tv_sec += expected_messages * PDA_MESSAGE_TIMEOUT_PER_EXPECTED_MESSAGE_SEC;
+}
 
 static bool pda_equipment_label(char *label, const char *text)
 {
@@ -1512,8 +1523,12 @@ bool waitForPDAMessageHighlight(struct aqualinkdata *aqdata, int highlighIndex, 
   LOG(PDA_LOG,LOG_DEBUG, "waitForPDAMessageHighlight index %d\n",highlighIndex);
 
   if(pda_m_hlightindex() == highlighIndex) return true;
+  if (numMessageReceived <= 0) return false;
 
   int i=0;
+  int ret=0;
+  struct timespec deadline;
+  set_pda_message_deadline(&deadline, numMessageReceived);
   pthread_mutex_lock(&aqdata->active_thread.thread_mutex);
 
   while( ++i <= numMessageReceived)
@@ -1522,14 +1537,27 @@ bool waitForPDAMessageHighlight(struct aqualinkdata *aqdata, int highlighIndex, 
 
     if (aqdata->last_packet_type == CMD_PDA_HIGHLIGHT && pda_m_hlightindex() == highlighIndex) break;
 
-    pthread_cond_wait(&aqdata->active_thread.thread_cond, &aqdata->active_thread.thread_mutex);
+    ret = pthread_cond_timedwait(&aqdata->active_thread.thread_cond,
+                                 &aqdata->active_thread.thread_mutex, &deadline);
+    if (ret != 0)
+      break;
   }
 
   pthread_mutex_unlock(&aqdata->active_thread.thread_mutex);
   
   if (pda_m_hlightindex() != highlighIndex) {
-    //LOG(PDA_LOG,LOG_ERR, "Could not select MENU of Aqualink control panel\n");
-    LOG(PDA_LOG,LOG_DEBUG, "waitForPDAMessageHighlight: did not receive index '%d'\n",highlighIndex);
+    if (ret == ETIMEDOUT) {
+      LOG(PDA_LOG,LOG_WARNING,
+          "waitForPDAMessageHighlight: timed out after %d sec waiting for index '%d'\n",
+          numMessageReceived * PDA_MESSAGE_TIMEOUT_PER_EXPECTED_MESSAGE_SEC,
+          highlighIndex);
+    } else if (ret != 0) {
+      LOG(PDA_LOG,LOG_ERR,
+          "waitForPDAMessageHighlight: wait failed for index '%d': %s\n",
+          highlighIndex, strerror(ret));
+    } else {
+      LOG(PDA_LOG,LOG_DEBUG, "waitForPDAMessageHighlight: did not receive index '%d'\n",highlighIndex);
+    }
     return false;
   } else 
     LOG(PDA_LOG,LOG_DEBUG, "waitForPDAMessageHighlight: received index '%d'\n",highlighIndex);
@@ -1649,14 +1677,37 @@ bool waitForPDAMessageTypes(struct aqualinkdata *aqdata, unsigned char mtype1,
 bool waitForPDAMessages(struct aqualinkdata *aqdata, int numberMessages)
 {
   int received=0;
+  int ret=0;
+
+  if (numberMessages <= 0)
+    return true;
+
+  struct timespec deadline;
+  set_pda_message_deadline(&deadline, numberMessages);
 
   pthread_mutex_lock(&aqdata->active_thread.thread_mutex);
   while( ++received <= numberMessages)
   {
     LOG(PDA_LOG,LOG_DEBUG, "waitForPDAMessages: %d of %d\n",received,numberMessages);
-    pthread_cond_wait(&aqdata->active_thread.thread_cond, &aqdata->active_thread.thread_mutex);
+    ret = pthread_cond_timedwait(&aqdata->active_thread.thread_cond,
+                                 &aqdata->active_thread.thread_mutex, &deadline);
+    if (ret != 0)
+      break;
   }
   pthread_mutex_unlock(&aqdata->active_thread.thread_mutex);
+
+  if (ret == ETIMEDOUT) {
+    LOG(PDA_LOG,LOG_WARNING,
+        "waitForPDAMessages: timed out after %d sec waiting for %d messages (received %d)\n",
+        numberMessages * PDA_MESSAGE_TIMEOUT_PER_EXPECTED_MESSAGE_SEC,
+        numberMessages, received - 1);
+    return false;
+  }
+  if (ret != 0) {
+    LOG(PDA_LOG,LOG_ERR, "waitForPDAMessages: wait failed after %d of %d messages: %s\n",
+        received - 1, numberMessages, strerror(ret));
+    return false;
+  }
 
   return true;
 }
