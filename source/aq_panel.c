@@ -1023,6 +1023,21 @@ int convertPumpPercentToSpeed(pump_detail *pump, int pValue) {
 // 4,6,8,10,12,14
 void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo, bool dual) {
 
+  // Labels are allocated by every panel-table construction. Release the
+  // previous table before rebuilding it; configured overrides are owned
+  // separately by config.c and are reapplied after the defaults are ready.
+  for (int i = 0; i < aqdata->total_buttons; i++) {
+    char *label = aqdata->aqbuttons[i].label;
+    if (label == NULL)
+      continue;
+    for (int j = i + 1; j < aqdata->total_buttons; j++) {
+      if (aqdata->aqbuttons[j].label == label)
+        aqdata->aqbuttons[j].label = NULL;
+    }
+    free(label);
+    aqdata->aqbuttons[i].label = NULL;
+  }
+
   // Since we are resetting all special buttons here (.special_mask), we need to clean out the lights and pumps.
   aqdata->num_lights = 0;
   aqdata->num_pumps = 0;
@@ -1269,6 +1284,8 @@ void initPanelButtons(struct aqualinkdata *aqdata, bool rs, int size, bool combo
         aqdata->aqbuttons[i].led->state = OFF;
     }
   #endif
+
+  applyPanelButtonLabelOverrides(aqdata);
 }
 
 const char* getRequestName(request_source source)

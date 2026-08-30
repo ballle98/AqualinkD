@@ -69,6 +69,7 @@ pump_detail *getPumpFromButtonID(struct aqualinkdata *aqdata, aqkey *button);
 clight_detail *getLightFromButtonID(struct aqualinkdata *aqdata, aqkey *button);
 aqkey *getVirtualButton(struct aqualinkdata *aqdata, int num);
 struct aqualinkdata *_aqdata = NULL;
+static char *_button_label_overrides[TOTAL_BUTTONS] = {NULL};
 
 
 
@@ -790,6 +791,42 @@ char *ncleanalloc(char*str, int length)
   return result;
 }
 
+static bool setPanelButtonLabelOverride(struct aqualinkdata *aqdata,
+                                        int index, char *label)
+{
+  if (index < 0 || index >= TOTAL_BUTTONS)
+    return false;
+
+  char *override = cleanalloc(label);
+  if (override == NULL)
+    return false;
+
+  free(_button_label_overrides[index]);
+  _button_label_overrides[index] = override;
+
+  if (index < aqdata->total_buttons) {
+    free(aqdata->aqbuttons[index].label);
+    aqdata->aqbuttons[index].label = cleanalloc(override);
+  }
+
+  return true;
+}
+
+void applyPanelButtonLabelOverrides(struct aqualinkdata *aqdata)
+{
+  int count = AQ_MIN(aqdata->total_buttons, TOTAL_BUTTONS);
+
+  for (int i = 0; i < count; i++) {
+    if (_button_label_overrides[i] == NULL)
+      continue;
+
+    free(aqdata->aqbuttons[i].label);
+    aqdata->aqbuttons[i].label = cleanalloc(_button_label_overrides[i]);
+    LOG(AQUA_LOG,LOG_DEBUG, "Reapplied configured label for button_%02d: %s\n",
+        i + 1, aqdata->aqbuttons[i].label);
+  }
+}
+
 /*
 char *cleanallocindex(char*str, int index)
 {
@@ -1112,19 +1149,18 @@ if (strlen(cleanwhitespace(value)) <= 0) {
     if (_aqconfig_.paneltype_mask == 0)
       setPanel(aqdata, _defaultPanel.rs, _defaultPanel.size, _defaultPanel.combo, _defaultPanel.dual);
 
-    int num = strtoul(param + 7, NULL, 10) - 1;
-    if (num > TOTAL_BUTTONS) {
-      LOG(AQUA_LOG,LOG_ERR, "Config error, button_%d is out of range\n",num+1);
+    long button_number = strtol(param + 7, NULL, 10);
+    int num = (int)button_number - 1;
+    if (button_number < 1 || button_number > TOTAL_BUTTONS) {
+      LOG(AQUA_LOG,LOG_ERR, "Config error, button_%ld is out of range\n",button_number);
       rtn=false;
     } else if (strncasecmp(param + 9, "_label", 6) == 0) {
-      aqdata->aqbuttons[num].label = cleanalloc(value);
-      rtn=true;
+      rtn=setPanelButtonLabelOverride(aqdata, num, value);
 #ifdef AQ_PDA
     } else if (strncasecmp(param + 9, "_PDA_label", 10) == 0) {
       LOG(AQUA_LOG,LOG_WARNING, "Config error, 'button_%d_PDA_label' is no longer supported, please use 'button_%d_label'\n",num,num);
       //aqdata->aqbuttons[num].pda_label = cleanalloc(value);
-      aqdata->aqbuttons[num].label = cleanalloc(value);
-      rtn=true;
+      rtn=setPanelButtonLabelOverride(aqdata, num, value);
 #endif
     /*
     } else if (strncasecmp(param + 9, "_lightModeCacheValue", 20) == 0) {

@@ -192,6 +192,7 @@ bool setConfigValue(struct aqualinkdata *aqdata, char *param, char *value);
 //bool mac(char *buf, int len, bool useDelimiter);
 char *cleanalloc(char *str);
 char *ncleanalloc(char *str, int length);
+void applyPanelButtonLabelOverrides(struct aqualinkdata *aqdata);
 
 
 
