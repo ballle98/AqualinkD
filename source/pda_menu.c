@@ -305,7 +305,7 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
       }
     break;
     case CMD_PDA_HIGHLIGHTCHARS:
-      // pkt[4] = line, pkt[5] = startchar, pkt[6] = endchar, pkt[7] = clr/inv
+      // pkt[4] = line, pkt[5] = startchar, pkt[6] = endchar, pkt[7] = display mode
       // highlight characters 10 to 15 on line 3 (from FREEZE PROTECT menu)
       //   PDA HlightChars | HEX: 0x10|0x02|0x62|0x10|0x03|0x0a|0x0f|0x01|0xa1|0x10|0x03|
       // clear hlight chars 2 to 9 on line 2 and line 3 then hlight char 2 to 3 on line 3
@@ -331,16 +331,14 @@ bool process_pda_menu_packet(unsigned char* packet, int length, bool force_print
         return false;
       } else if (packet[7] == 0) {
         clear_hlightchars();
-      } else if (packet[7] == 1) {
+      } else {
+        // The Power Center uses multiple nonzero display modes. Mode 1 is
+        // the normal selection highlight, mode 2 flashes changing equipment
+        // state, and mode 4 highlights an editable value. Consumers only
+        // need the selected character range, so all nonzero modes are valid.
         _hlightcharlineindex = packet[4];
         _hlightcharindexstart = packet[5];
         _hlightcharindexstop = packet[6];
-      } else {
-        LOG(PDA_LOG,LOG_WARNING,
-            "Ignoring invalid PDA character highlight line=%d start=%d end=%d mode=%d\n",
-            packet[4], packet[5], packet[6], packet[7]);
-        clear_hlightchars();
-        return false;
       }
       //if (getLogLevel(PDA_LOG) >= LOG_DEBUG){print_menu();}
       if (getLogLevel(PDA_LOG) >= LOG_DEBUG && force_print_menu ){print_menu();}
