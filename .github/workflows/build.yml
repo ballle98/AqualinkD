@@ -52,6 +52,7 @@ jobs:
       # Using a standard 'run' block as we are already inside the container
       run: |
         make clean
+        make test
         # Pass the workflow revision explicitly because the build container may
         # not contain git or a .git directory.
         make GIT_HASH="$(printf '%.7s' "$GITHUB_SHA")" buildrelease

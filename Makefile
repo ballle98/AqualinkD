@@ -196,7 +196,7 @@ RSMON_AMD64 = ./release/rs485mon-amd64
 
 
 # Rules with no targets
-.PHONY: clean clean-buildfiles buildrelease release install
+.PHONY: clean clean-buildfiles buildrelease release install test
 
 # Default target
 .DEFAULT_GOAL := all
@@ -258,6 +258,12 @@ dummydevice:	$(DDEVICE)
 
 dummyreader:	$(DREADER)
 	$(info $(DREADER) has been compiled)
+
+test: $(OBJ_DIR)/test_pda_menu
+	$(OBJ_DIR)/test_pda_menu
+
+$(OBJ_DIR)/test_pda_menu: tests/test_pda_menu.c source/pda_menu.c | $(OBJ_DIR)
+	$(CC) $(GCCFLAGS) -D AQ_PDA $(INCLUDES) -o $@ $^
 
 # Container, add container flag and compile
 container: CFLAGS := $(CFLAGS) -D AQ_CONTAINER
@@ -415,4 +421,4 @@ clean: clean-buildfiles
 	$(RM) $(wildcard *.o) $(wildcard *~) $(MAIN) $(MAIN_ARM64) $(MAIN_ARMHF) $(MAIN_AMD64) $(RSMON) $(DDEVICE) $(RSMON_ARM64) $(RSMON_ARMHF) $(RSMON_AMD64) $(MAIN_U) $(PLAY) $(PL_EXOBJ) $(LOGR) $(PLAY) $(DEBG)
 
 clean-buildfiles:
-	$(RM) $(wildcard *.o) $(wildcard *~) $(OBJ_FILES) $(DBG_OBJ_FILES) $(SL_OBJ_FILES) $(DD_OBJ_FILES) $(DR_OBJ_FILES) $(OBJ_FILES_ARMHF) $(OBJ_FILES_ARM64) $(OBJ_FILES_AMD64) $(SL_OBJ_FILES_ARMHF) $(SL_OBJ_FILES_ARM64) $(SL_OBJ_FILES_AMD64)
+	$(RM) $(wildcard *.o) $(wildcard *~) $(OBJ_FILES) $(DBG_OBJ_FILES) $(SL_OBJ_FILES) $(DD_OBJ_FILES) $(DR_OBJ_FILES) $(OBJ_FILES_ARMHF) $(OBJ_FILES_ARM64) $(OBJ_FILES_AMD64) $(SL_OBJ_FILES_ARMHF) $(SL_OBJ_FILES_ARM64) $(SL_OBJ_FILES_AMD64) $(OBJ_DIR)/test_pda_menu
