@@ -933,6 +933,22 @@ bool process_pda_packet(unsigned char *packet, int length)
 
   process_pda_menu_packet(packet, length, in_programming_mode(_aqualink_data));
 
+  // PDA panels report the controller mode as a dedicated screen rather than
+  // the long status messages used by AllButton panels.  Retain the previous
+  // state while a replacement screen is incomplete, then update it as soon as
+  // the new screen can be identified.
+  pda_menu_type menu_type = pda_m_type();
+  if (menu_type == PM_SERVICE_MODE) {
+    SET_IF_CHANGED(_aqualink_data->service_mode_state, ON,
+                   _aqualink_data->is_dirty);
+  } else if (menu_type == PM_TIMEOUT_MODE) {
+    SET_IF_CHANGED(_aqualink_data->service_mode_state, FLASH,
+                   _aqualink_data->is_dirty);
+  } else if (menu_type != PM_UNKNOWN) {
+    SET_IF_CHANGED(_aqualink_data->service_mode_state, OFF,
+                   _aqualink_data->is_dirty);
+  }
+
   switch (packet[PKT_CMD])
   {
     case CMD_PROBE:

@@ -214,6 +214,8 @@ pda_menu_type pda_m_type()
     return PM_TURN_ON_AFTER_DELAY;
   } else if (strncasecmp(_menu[3],"  SERVICE MODE  ", 16) == 0) {
     return PM_SERVICE_MODE;
+  } else if (strncasecmp(_menu[3],"  TIMEOUT MODE  ", 16) == 0) {
+    return PM_TIMEOUT_MODE;
   } else if (strncasecmp(_menu[5],"  must be set   ", 16) == 0 &&
              strncasecmp(_menu[6],"  higher than   ", 16) == 0) {
     return PM_MUST_BE_SET_HIGHER_THAN;

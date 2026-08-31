@@ -31,6 +31,7 @@ typedef enum pda_menu_type {
   PM_BOOST,
   PM_TURN_ON_AFTER_DELAY,
   PM_SERVICE_MODE,
+  PM_TIMEOUT_MODE,
   PM_MUST_BE_SET_HIGHER_THAN
 } pda_menu_type;
 
