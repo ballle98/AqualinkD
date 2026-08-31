@@ -102,6 +102,13 @@ int main(void)
   assert_no_highlight_chars();
   assert(strcmp(pda_m_line(1), "") == 0);
 
+  set_line(3, "  Service Mode  ");
+  assert(pda_m_type() == PM_SERVICE_MODE);
+
+  assert(process(CMD_PDA_CLEAR, 0, 0, 0, 0));
+  set_line(3, "  Timeout Mode  ");
+  assert(pda_m_type() == PM_TIMEOUT_MODE);
+
   puts("PDA menu parser tests passed");
   return 0;
 }
