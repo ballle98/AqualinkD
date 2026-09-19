@@ -613,7 +613,8 @@ int startup(char *self, char *cfgFile)
     LOG(AQUA_LOG,LOG_NOTICE, "Starting %s v%s !\n", AQUALINKD_NAME, AQUALINKD_VERSION);
   }
 
-  sprintf(_aqualink_data.self, basename(self));
+  snprintf(_aqualink_data.self, sizeof(_aqualink_data.self), "%s",
+           basename(self));
   clearDebugLogMask();
   read_config(&_aqualink_data, cfgFile);
 

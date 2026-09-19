@@ -1151,9 +1151,16 @@ uriAtype action_URI(request_source from, const char *URI, int uri_length, float 
     return uActioned;
   } else if (strncmp(ri1, "installrelease", 14) == 0 && from == NET_WS) { // Only valid from websocket.
     if (ri2 != NULL) {
+      size_t version_length = (size_t)(URI + uri_length - ri2);
+
       LOG(NET_LOG,LOG_NOTICE, "Received install release request, %s\n",ri2);
-      _aqualink_data->upgrade_version = malloc( (sizeof(char*) * strlen(ri2)) + 1);
-      snprintf(_aqualink_data->upgrade_version, strlen(ri2)+1, ri2);
+      _aqualink_data->upgrade_version = malloc(version_length + 1);
+      if (_aqualink_data->upgrade_version == NULL) {
+        LOG(NET_LOG,LOG_ERR, "Could not allocate upgrade version\n");
+        return uBad;
+      }
+      memcpy(_aqualink_data->upgrade_version, ri2, version_length);
+      _aqualink_data->upgrade_version[version_length] = '\0';
     } else {
       LOG(NET_LOG,LOG_NOTICE, "Received install release request, but no version named, using latest!\n");
       _aqualink_data->upgrade_version = "latest";
@@ -1177,8 +1184,12 @@ uriAtype action_URI(request_source from, const char *URI, int uri_length, float 
     //LOG(NET_LOG,LOG_NOTICE, "Received request ri1=%s, ri2=%s, ri3=%s value=%f\n",ri1,ri2,ri3,value);
     _aqualink_data->slogger_packets = round(value);
     if (ri2 != NULL) {
-      //MIN( 19, (ri3 - ri2));
-      snprintf(_aqualink_data->slogger_ids, AQ_MIN( 19, (ri3 - ri2)+1 ), ri2); // 0x01 0x02 0x03 0x04
+      size_t ids_length = ri3 != NULL
+                            ? (size_t)(ri3 - ri2 - 1)
+                            : (size_t)(URI + uri_length - ri2);
+      ids_length = AQ_MIN(ids_length, sizeof(_aqualink_data->slogger_ids) - 1);
+      memcpy(_aqualink_data->slogger_ids, ri2, ids_length);
+      _aqualink_data->slogger_ids[ids_length] = '\0'; // 0x01 0x02 0x03 0x04
     } else {
       _aqualink_data->slogger_ids[0] = '\0';
     }
@@ -2446,7 +2457,6 @@ bool start_net_services(struct aqualinkdata *aqdata)
 
   return true;
 }
-
 
 
 

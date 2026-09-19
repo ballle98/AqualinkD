@@ -1721,7 +1721,7 @@ void check_print_config (struct aqualinkdata *aqdata)
         // don't need to do anything, just reduce total number sensors
         //printf("Remove last sensor\n");
       } else if (aqdata->num_sensors > 1) { // there are more sensors after this bad one
-        for (int j=i; j < aqdata->num_sensors; j++) {
+        for (int j=i; j < aqdata->num_sensors - 1; j++) {
           //printf("Moved sensor %d to %d\n",(j+1),j);
           aqdata->sensors[j].label = aqdata->sensors[j+1].label;
           aqdata->sensors[j].path = aqdata->sensors[j+1].path;
@@ -1729,7 +1729,8 @@ void check_print_config (struct aqualinkdata *aqdata)
           aqdata->sensors[j].regex = aqdata->sensors[j+1].regex;
           aqdata->sensors[j].uom = aqdata->sensors[j+1].uom;
           //aqdata->sensors[j].ID = aqdata->sensors[j+1].ID;
-          sprintf(aqdata->sensors[j].ID, "%s%d", SENSOR_NAME, j+1);
+          snprintf(aqdata->sensors[j].ID, sizeof(aqdata->sensors[j].ID),
+                   "%s%c", SENSOR_NAME, '1' + j);
           //printf("Sensor %d = %s, %s\n",j,aqdata->sensors[j].ID,aqdata->sensors[j].label);
         }
         i--; // Need re-test i incase we have multiple blank sensors
